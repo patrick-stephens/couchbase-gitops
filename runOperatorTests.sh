@@ -31,5 +31,5 @@ docker pull "${SERVER_IMAGE}"
 kind load docker-image "${SERVER_IMAGE}"
 
 pushd "${OPERATOR_REPO_DIR}"
-go test github.com/couchbase/couchbase-operator/test/e2e -run TestOperator -v --race -timeout 24h -parallel 1 -args -color "$@"
+go test github.com/couchbase/couchbase-operator/test/e2e -run TestOperator -v --race -timeout 24h -parallel 1 -args -color --logging-image "couchbase/operator-logging:${DOCKER_TAG}" "$@"
 popd
