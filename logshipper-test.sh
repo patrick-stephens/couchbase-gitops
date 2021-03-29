@@ -17,18 +17,18 @@ OPERATOR_REPO_DIR=$(find $SCRIPT_DIR/../ -type d -name "couchbase-operator" -pri
 LOGSHIPPER_REPO_DIR=$(find $SCRIPT_DIR/../ -type d -name "couchbase-operator-logging" -print0)
 
 DOCKER_TAG=${DOCKER_TAG:-v1}
+SERVER_IMAGE=${SERVER_IMAGE:-couchbase/server:6.6.0}
 
 if [[ "${REBUILD_ALL}" == "yes" ]]; then
   echo "Full rebuild"
   SKIP_CLUSTER_CREATION=no
 
-  # Ensure we have a clean reproducible build
-  docker system prune --volumes --all --force
-  pushd "${OPERATOR_REPO_DIR}"
-  make && make container
-  popd
   pushd "${LOGSHIPPER_REPO_DIR}"
   make clean build container
+  popd
+
+  pushd "${OPERATOR_REPO_DIR}"
+  make && make container
   popd
 fi
 
@@ -36,7 +36,7 @@ if [[ "${SKIP_CLUSTER_CREATION}" != "yes" ]]; then
   echo "Recreating full cluster"
 
   # Simple script to deal with running up a test cluster for KIND for developing logging updates for.
-  cat << EOF > "${CONFIG}"
+  cat << EOF > "${CLUSTER_CONFIG}"
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 featureGates:
@@ -44,12 +44,10 @@ featureGates:
 nodes:
 - role: control-plane
 - role: worker
-- role: worker
-- role: worker
 EOF
 
   kind delete cluster --name="${CLUSTER_NAME}" && echo "Deleted old kind cluster, creating a new one..."
-
+  
   kind create cluster --name="${CLUSTER_NAME}" --config="${CLUSTER_CONFIG}"
   echo "$(date) waiting for cluster..."
   until kubectl cluster-info;  do
@@ -67,11 +65,11 @@ EOF
   # Ensure we have everything we need
   kind load docker-image "couchbase/couchbase-operator:${DOCKER_TAG}" --name="${CLUSTER_NAME}"
   kind load docker-image "couchbase/couchbase-operator-admission:${DOCKER_TAG}" --name="${CLUSTER_NAME}"
-  kind load docker-image "couchbase/couchbase-operator-logging:${DOCKER_TAG}" --name="${CLUSTER_NAME}"
+  kind load docker-image "couchbase/operator-logging:${DOCKER_TAG}" --name="${CLUSTER_NAME}"
 
   # Not strictly required but improves caching performance
-  docker pull couchbase/server:6.6.1
-  kind load docker-image couchbase/server:6.6.1 --name="${CLUSTER_NAME}"
+  docker pull "${SERVER_IMAGE}"
+  kind load docker-image "${SERVER_IMAGE}" --name="${CLUSTER_NAME}"
   # It also slows down everything to allow the cluster to come up fully
 
   rm -rf "${CONFIG_DIR}"
@@ -117,30 +115,20 @@ kind: CouchbaseCluster
 metadata:
   name: cb-example
 spec:
-  monitoring:
-    prometheus:
-      enabled: true
   logging:
     server:
       enabled: true
       sidecar:
-        image: "couchbase/couchbase-operator-logging:${DOCKER_TAG}"
+        image: couchbase/operator-logging:${DOCKER_TAG}
     audit:
       enabled: true
-      rotation:
-        size: "1Mi"
-      garbageCollection:
-        sidecar:
-          enabled: true
-          interval: "1m"
-          age: "1m"
-  image: couchbase/server:6.6.1
+  image: "${SERVER_IMAGE}"
   security:
     adminSecret: cb-example-auth
   buckets:
     managed: true
   servers:
-  - size: 3
+  - size: 1
     name: all_services
     services:
     - data
@@ -166,7 +154,7 @@ __CLUSTER_CONFIG_EOF__
 
   # Wait for deployment to complete
   echo "Waiting for CB to start up..."
-  until [[ $(kubectl get pods --field-selector=status.phase=Running --selector='app=couchbase' --no-headers 2>/dev/null |wc -l) -eq 3 ]]; do
+  until [[ $(kubectl get pods --field-selector=status.phase=Running --selector='app=couchbase' --no-headers 2>/dev/null |wc -l) -eq 1 ]]; do
     echo -n '.'
     sleep 2
   done
