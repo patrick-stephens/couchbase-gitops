@@ -97,5 +97,5 @@ __MONITOR_EOF__
 # Always restart the DS to ensure we pick up the latest image
 kubectl rollout restart ds -n kube-system node-problem-detector
 
-sleep 5
-nodes=$(kubectl get nodes | sed '1d' | awk '{print $1}') && for node in $nodes; do;  kubectl describe node | sed -n '/Conditions/,/Ready/p' ; done 
+# To see node conditions:
+# nodes=$(kubectl get nodes | sed '1d' | awk '{print $1}') && for node in $nodes; do;  kubectl describe node | sed -n '/Conditions/,/Ready/p' ; done
