@@ -1,0 +1,26 @@
+{
+    "plugin": "custom",
+    "pluginConfig": {
+      "invoke_interval": "30s",
+      "timeout": "10s",
+      "max_output_length": 80,
+      "concurrency": 1
+    },
+    "source": "ping-nodes-custom-plugin-monitor",
+    "conditions": [
+      {
+        "type": "UnableToPingNode",
+        "reason": "UnableToPingNode",
+        "message": "Able to ping all other nodes"
+      }
+    ],
+    "rules": [
+      {
+        "type": "permanent",
+        "condition": "UnableToPingNode",
+        "reason": "UnableToPingNode",
+        "path": "./config/plugin/ping-all.sh",
+        "message": "Unable to ping at least some of the nodes"
+      }
+    ]
+  }

@@ -39,4 +39,4 @@ RUN find /config -name "*.sh" -exec chmod a+x {} \;
 
 COPY --from=builder /code/util-linux/nsenter /
 
-ENTRYPOINT ["/node-problem-detector", "--logtostderr", "--config.custom-plugin-monitor=/config/uptime-plugin-monitor.json,/config/network-problem-monitor.json,/config/fd-problem-monitor.json"]
+ENTRYPOINT ["/node-problem-detector", "--logtostderr", "--config.custom-plugin-monitor=/config/ping-nodes.json,/config/network-problem-monitor.json,/config/uptime-plugin-monitor.json,/config/network-problem-monitor.json,/config/fd-problem-monitor.json"]
