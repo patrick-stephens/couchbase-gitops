@@ -20,14 +20,17 @@ RUN make LDFLAGS="--static" nsenter
 
 #v0.8.7 contains a fix for always reporting timeout errors
 FROM k8s.gcr.io/node-problem-detector/node-problem-detector:v0.8.7
+# For OCP: https://github.com/openshift/node-problem-detector
 
 RUN set -eux; \
   apt-get update; \
   apt-get install -y --no-install-recommends \
     curl \
+    dnsutils \
     iptables \
     iputils-ping \
     jq \
+    net-tools \
   ; \
   rm -rf /var/lib/apt/lists/*;
 
