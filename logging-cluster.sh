@@ -677,7 +677,7 @@ spec:
         - --prometheus-port=2020
         ports:
         - containerPort: 2020
-        image: k8s.gcr.io/node-problem-detector/node-problem-detector:v0.8.6
+        image: k8s.gcr.io/node-problem-detector/node-problem-detector:v0.8.7
         resources:
           limits:
             cpu: 10m

@@ -1,9 +1,7 @@
 #!/bin/bash
-set -eu
+set -eux
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-
-REPO_DIR=${REPO_DIR:-$SCRIPT_DIR/couchbase-operator}
 
 CONFIG_DIR=$(mktemp -d)
 CLUSTER_NAME=${CLUSTER:-logshipper-test}
@@ -19,6 +17,7 @@ LOGSHIPPER_REPO_DIR=$(find $SCRIPT_DIR/../ -type d -name "couchbase-operator-log
 DOCKER_TAG=${DOCKER_TAG:-v1}
 SERVER_IMAGE=${SERVER_IMAGE:-couchbase/server:6.6.1}
 SERVER_COUNT=${SERVER_COUNT:-1}
+set +x
 
 if [[ "${REBUILD_ALL}" == "yes" ]]; then
   echo "Full rebuild"
@@ -44,8 +43,13 @@ featureGates:
  EphemeralContainers: true
 nodes:
 - role: control-plane
+EOF
+
+    for i in $(seq $SERVER_COUNT); do
+        cat << EOF > "${CLUSTER_CONFIG}"
 - role: worker
 EOF
+    done
 
   kind delete cluster --name="${CLUSTER_NAME}" && echo "Deleted old kind cluster, creating a new one..."
   
@@ -77,8 +81,8 @@ EOF
 
   # Install CRD, DAC and operator
   kubectl create -f "${OPERATOR_REPO_DIR}/example/crd.yaml"
-  "${OPERATOR_REPO_DIR}/build/bin/cbopcfg" create admission --image=couchbase/couchbase-operator-admission:v1 --log-level=debug
-  "${OPERATOR_REPO_DIR}/build/bin/cbopcfg" create operator --image=couchbase/couchbase-operator:v1 --log-level=debug
+  "${OPERATOR_REPO_DIR}/build/bin/cbopcfg" create admission --image="couchbase/couchbase-operator-admission:${DOCKER_TAG}" --log-level=debug
+  "${OPERATOR_REPO_DIR}/build/bin/cbopcfg" create operator --image="couchbase/couchbase-operator:${DOCKER_TAG}" --log-level=debug
 
   # Need to wait for operator and DAC to start up
   echo "Waiting for DAC to complete..."
@@ -115,13 +119,6 @@ kind: CouchbaseCluster
 metadata:
   name: cb-example
 spec:
-  logging:
-    server:
-      enabled: true
-      sidecar:
-        image: couchbase/operator-logging:${DOCKER_TAG}
-    audit:
-      enabled: true
   image: "${SERVER_IMAGE}"
   security:
     adminSecret: cb-example-auth
@@ -157,20 +154,3 @@ __CLUSTER_CONFIG_EOF__
   done
   echo -n " done"
 fi #SKIP_CLUSTER_CREATION
-
-# Access REST API
-echo "Waiting for REST API..."
-kubectl port-forward cb-example-0000 8091 &>/dev/null &
-PORT_FORWARD_PID=$!
-
-# We need to wait for the CB server to start up and respond to REST API
-until curl --silent --show-error -X GET -u Administrator:password http://localhost:8091/settings/audit &>/dev/null; do
-  echo -n '.'
-  sleep 2
-done
-echo -n " done"
-
-echo "Audit settings:"
-curl --silent --show-error -X GET -u Administrator:password http://localhost:8091/settings/audit | jq
-
-kill -9 $PORT_FORWARD_PID &>/dev/null

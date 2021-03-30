@@ -1,0 +1,27 @@
+{
+    "plugin": "custom",
+    "pluginConfig": {
+      "invoke_interval": "120s",
+      "timeout": "90s",
+      "max_output_length": 80,
+      "concurrency": 3,
+      "enable_message_change_based_condition_update": false
+    },
+    "source": "fd-custom-plugin-monitor",
+    "conditions": [
+      {
+        "type": "FDPressure",
+        "reason": "NodeHasNoFDPressure",
+        "message": "node has no fd pressure"
+      }
+    ],
+    "rules": [
+      {
+        "type": "permanent",
+        "condition": "FDPressure",
+        "reason": "NodeHasFDPressure",
+        "path": "/config/plugin/check_fd.sh",
+        "message": "too many fds have been used"
+      }
+    ]
+  }
