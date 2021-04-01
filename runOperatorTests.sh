@@ -10,11 +10,11 @@ SERVER_IMAGE=${SERVER_IMAGE:-couchbase/server:6.6.1}
 RECREATE_CLUSTER=${RECREATE_CLUSTER:-no}
 
 pushd "${OPERATOR_REPO_DIR}"
-make && make container
+    make && make container
 popd
 
 pushd "${LOGSHIPPER_REPO_DIR}"
-make container container-rhel
+    make container container-rhel
 popd
 
 if [[ "${RECREATE_CLUSTER}" == "yes" ]]; then
@@ -31,5 +31,5 @@ docker pull "${SERVER_IMAGE}"
 kind load docker-image "${SERVER_IMAGE}"
 
 pushd "${OPERATOR_REPO_DIR}"
-go test github.com/couchbase/couchbase-operator/test/e2e -run TestOperator -v --race -timeout 24h -parallel 1 -args -color --logging-image "couchbase/fluent-bit:${DOCKER_TAG}" "$@"
+    go test github.com/couchbase/couchbase-operator/test/e2e -run TestOperator -v --race -timeout 24h -parallel 1 -args -color --logging-image "couchbase/fluent-bit:${DOCKER_TAG}" "$@"
 popd
