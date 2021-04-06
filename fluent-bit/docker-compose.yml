@@ -1,0 +1,35 @@
+version: "3.9"
+services:
+    couchbase-server1:
+        container_name: db1
+        image: couchbase:6.6.1
+        ports:
+          - "8091-8096:8091-8096"
+          - "11210-11211:11210-11211"
+        volumes:
+          - log-volume:/opt/couchbase/var/lib/couchbase/logs/:rw
+    # couchbase-server2:
+    #     container_name: db2
+    #     image: couchbase:6.6.1
+    #     expose:
+    #         - "8091-8096"
+    #         - "11210-11211"
+    # couchbase-server3:
+    #     container_name: db3
+    #     image: couchbase:6.6.1
+    #     expose:
+    #         - "8091-8096"
+    #         - "11210-11211"
+    log-streamer:
+        container_name: logging
+        # image: fluent/fluent-bit:1.7.3-debug
+        image: patcouchbase/fluent-bit:1.7.3-02ecbda3cfbaa847939116362ca5dc0f92666137
+        depends_on:
+            - couchbase-server1
+        environment:
+            - COUCHBASE_LOGS=/opt/couchbase/var/lib/couchbase/logs
+        volumes:
+          - log-volume:/opt/couchbase/var/lib/couchbase/logs/:ro
+        #   - ./fluent-bit.conf:/fluent-bit/config/fluent-bit.conf:ro
+volumes:
+    log-volume:
