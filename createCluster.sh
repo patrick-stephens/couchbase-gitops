@@ -12,7 +12,7 @@ REBUILD_ALL=${REBUILD_ALL:-yes}
 
 # Find the relevant git repos locally
 OPERATOR_REPO_DIR=$(find $SCRIPT_DIR/../ -type d -name "couchbase-operator" -print0)
-LOGSHIPPER_REPO_DIR=$(find $SCRIPT_DIR/../ -type d -name "couchbase-operator-logging" -print0)
+LOGSHIPPER_REPO_DIR=$(find $SCRIPT_DIR/../ -type d -name "couchbase-fluent-bit" -print0)
 
 DOCKER_TAG=${DOCKER_TAG:-v1}
 SERVER_IMAGE=${SERVER_IMAGE:-couchbase/server:6.6.1}
@@ -45,8 +45,9 @@ nodes:
 - role: control-plane
 EOF
 
-    for i in $(seq $SERVER_COUNT); do
-        cat << EOF > "${CLUSTER_CONFIG}"
+    for i in $(seq "$SERVER_COUNT"); do
+      echo "Adding worker $i"
+      cat << EOF >> "${CLUSTER_CONFIG}"
 - role: worker
 EOF
     done
@@ -70,7 +71,7 @@ EOF
   # Ensure we have everything we need
   kind load docker-image "couchbase/couchbase-operator:${DOCKER_TAG}" --name="${CLUSTER_NAME}"
   kind load docker-image "couchbase/couchbase-operator-admission:${DOCKER_TAG}" --name="${CLUSTER_NAME}"
-  kind load docker-image "couchbase/operator-logging:${DOCKER_TAG}" --name="${CLUSTER_NAME}"
+  kind load docker-image "couchbase/fluent-bit:${DOCKER_TAG}" --name="${CLUSTER_NAME}"
 
   # Not strictly required but improves caching performance
   docker pull "${SERVER_IMAGE}"

@@ -14,7 +14,7 @@ REBUILD_ALL=${REBUILD_ALL:-yes}
 
 # Find the relevant git repos locally
 OPERATOR_REPO_DIR=$(find $SCRIPT_DIR/../ -type d -name "couchbase-operator" -print0)
-LOGSHIPPER_REPO_DIR=$(find $SCRIPT_DIR/../ -type d -name "couchbase-operator-logging" -print0)
+LOGSHIPPER_REPO_DIR=$(find $SCRIPT_DIR/../ -type d -name "couchbase-fluent-bit" -print0)
 
 DOCKER_TAG=${DOCKER_TAG:-v1}
 SERVER_IMAGE=${SERVER_IMAGE:-couchbase/server:6.6.1}
@@ -44,9 +44,13 @@ featureGates:
  EphemeralContainers: true
 nodes:
 - role: control-plane
+EOF
+for i in $(seq "$SERVER_COUNT"); do
+  echo "Adding worker $i"
+  cat << EOF >> "${CLUSTER_CONFIG}"
 - role: worker
 EOF
-
+done
   kind delete cluster --name="${CLUSTER_NAME}" && echo "Deleted old kind cluster, creating a new one..."
   
   kind create cluster --name="${CLUSTER_NAME}" --config="${CLUSTER_CONFIG}"
