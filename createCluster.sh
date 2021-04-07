@@ -120,6 +120,13 @@ kind: CouchbaseCluster
 metadata:
   name: cb-example
 spec:
+  logging:
+    server:
+      enabled: true
+      sidecar:
+        image: couchbase/fluent-bit:${DOCKER_TAG}
+    audit:
+      enabled: true
   image: "${SERVER_IMAGE}"
   security:
     adminSecret: cb-example-auth
@@ -153,5 +160,5 @@ __CLUSTER_CONFIG_EOF__
     echo -n '.'
     sleep 2
   done
-  echo -n " done"
+  echo "CB started"
 fi #SKIP_CLUSTER_CREATION
