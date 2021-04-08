@@ -1,0 +1,59 @@
+fluent-bit:
+  enabled: false
+grafana:
+  enabled: true
+  image:
+    tag: 7.5.2
+prometheus:
+  alertmanager:
+    persistentVolume:
+      enabled: false
+  enabled: true
+  server:
+    persistentVolume:
+      enabled: false
+promtail:
+  enabled: true
+loki:
+  # Needed for Alerting: https://grafana.com/docs/loki/latest/alerting/
+  # This is just a simple example, for more details: https://grafana.com/docs/loki/latest/configuration/#ruler_config
+  ruler:
+    storage:
+      type: local
+      local:
+        directory: /rules
+    rule_path: /tmp/scratch
+    alertmanager_url: http://alertmanager.svc.logging:9093
+    ring:
+      kvstore:
+        store: inmemory
+    enable_api: true
+  # Specify Loki Alerting rules based on this documentation: https://grafana.com/docs/loki/latest/alerting/
+  # When specified, you also need to add a ruler config section above. An example is shown in the alerting docs.
+  alerting_groups:
+    - name: slow
+      rules:
+      - alert: slow-ops
+        annotations:
+          message: "{{ $labels.job }} is reporting slow ops."
+        expr: 'sum by (cluster, job, pod) (count_over_time({app="couchbase"}|="couchbase.log.memcached"|="Slow operation") > 0)'
+        for: 10m
+        labels: 
+          severity: critical
+      - alert: slow-runtime
+        annotations:
+          message: "{{ $labels.job }} is reporting slow runtime."
+        expr: 'sum by (cluster, job, pod) (count_over_time({app="couchbase"}|="couchbase.log.memcached"|="Slow runtime") > 0)'
+        for: 10m
+        labels: 
+          severity: critical
+    - name: logs
+      rules:
+      - alert: ErrorInLogs
+        expr: sum(count_over_time({app="couchbase"}|~ "[Ee]rror"[1m]) >= 1
+        for: 10s
+        labels:
+          severity: critical
+          category: logs
+        annotations:
+          title: "{{$value}} Errors occurred in application logs"

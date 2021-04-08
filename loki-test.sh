@@ -19,9 +19,8 @@ if [[ "${DEPLOY_CLOKI}" == "yes" ]]; then
   # Install Grafana, Loki, etc. using Helm
   helm repo add grafana https://grafana.github.io/helm-charts
   kubectl create namespace logging
-  helm upgrade --install loki --namespace=logging grafana/loki-stack \
-    --set fluent-bit.enabled=false,promtail.enabled=true,grafana.enabled=true,prometheus.enabled=true,prometheus.alertmanager.persistentVolume.enabled=false,prometheus.server.persistentVolume.enabled=false,grafana.image.tag="7.5.2"
-
+  helm upgrade --install loki --namespace=logging grafana/loki-stack -f ./loki-values.yaml
+  
   # Wait for deployment to complete
   echo "Waiting for Grafana to start up..."
   until kubectl rollout status -n logging deployment/loki-grafana; do
