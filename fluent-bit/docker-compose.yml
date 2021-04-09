@@ -23,7 +23,7 @@ services:
     log-streamer:
         container_name: logging
         # image: fluent/fluent-bit:1.7.3-debug
-        image: patcouchbase/fluent-bit:1.7.3-02ecbda3cfbaa847939116362ca5dc0f92666137
+        image: couchbase/fluent-bit:1.0.0
         depends_on:
             - couchbase-server1
         environment:
