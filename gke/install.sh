@@ -27,7 +27,7 @@ helm repo add grafana https://grafana.github.io/helm-charts
 helm repo update
 kubectl create namespace logging
 #do we want to remove persistence in case it fills up??!
-helm upgrade --debug --install loki --namespace=logging grafana/loki-stack --set grafana.enabled=true,prometheus.enabled=false,loki.persistence.enabled=true,loki.persistence.storageClassName=standard,loki.persistence.size=5Gi,promtail.enabled=false
+#helm upgrade --debug --install loki --namespace=logging grafana/loki-stack --set grafana.enabled=true,prometheus.enabled=false,loki.persistence.enabled=true,loki.persistence.storageClassName=standard,loki.persistence.size=5Gi,promtail.enabled=false
 helm upgrade --debug --install loki grafana/loki-stack --set grafana.enabled=true,prometheus.enabled=false,promtail.enabled=false
 
 # Wait for deployment to complete
