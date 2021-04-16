@@ -5,6 +5,15 @@ networks:
 
 services:
     # Couchbase bits
+    cb-init:
+        container_name: cb-init
+        image: couchbase:6.6.1
+        volumes:
+        - ./setupCluster.sh:/setup.sh
+        command: bash /setup.sh
+        networks: 
+            - back
+
     db1:
         container_name: db1
         image: couchbase:6.6.1
@@ -14,10 +23,9 @@ services:
         volumes:
             - log-volume:/opt/couchbase/var/lib/couchbase/logs/:rw
         networks:
-            - back
-        links:
-            - db2:couchbase2.compose.local
-            - db3:couchbase3.compose.local
+            back:
+                aliases: 
+                    - couchbase1.compose.local
     db2:
         container_name: db2
         image: couchbase:6.6.1
@@ -25,7 +33,9 @@ services:
             - "8091-8096"
             - "11210-11211"
         networks:
-            - back
+            back:
+                aliases: 
+                    - couchbase2.compose.local
     db3:
         container_name: db3
         image: couchbase:6.6.1
@@ -33,7 +43,9 @@ services:
             - "8091-8096"
             - "11210-11211"
         networks:
-            - back
+            back:
+                aliases: 
+                    - couchbase3.compose.local
     logging:
         container_name: logging
         image: couchbase/fluent-bit:1.0.1
