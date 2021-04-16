@@ -14,7 +14,7 @@ pushd "${OPERATOR_REPO_DIR}"
 popd
 
 pushd "${LOGSHIPPER_REPO_DIR}"
-    make container container-rhel
+    make container
 popd
 
 if [[ "${RECREATE_CLUSTER}" == "yes" ]]; then
@@ -23,7 +23,6 @@ if [[ "${RECREATE_CLUSTER}" == "yes" ]]; then
 fi
 kind load docker-image "couchbase/couchbase-operator:${DOCKER_TAG}"
 kind load docker-image "couchbase/couchbase-operator-admission:${DOCKER_TAG}"
-kind load docker-image "couchbase/fluent-bit:${DOCKER_TAG}"
 kind load docker-image "couchbase/fluent-bit:${DOCKER_TAG}"
 
 # Not strictly required but improves caching performance
