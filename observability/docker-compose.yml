@@ -5,7 +5,7 @@ networks:
 
 services:
     # Couchbase bits
-    couchbase-server1:
+    db1:
         container_name: db1
         image: couchbase:6.6.1
         ports:
@@ -15,7 +15,10 @@ services:
             - log-volume:/opt/couchbase/var/lib/couchbase/logs/:rw
         networks:
             - back
-    couchbase-server2:
+        links:
+            - db2:couchbase2.compose.local
+            - db3:couchbase3.compose.local
+    db2:
         container_name: db2
         image: couchbase:6.6.1
         expose:
@@ -23,7 +26,7 @@ services:
             - "11210-11211"
         networks:
             - back
-    couchbase-server3:
+    db3:
         container_name: db3
         image: couchbase:6.6.1
         expose:
@@ -31,11 +34,11 @@ services:
             - "11210-11211"
         networks:
             - back
-    log-streamer:
+    logging:
         container_name: logging
         image: couchbase/fluent-bit:1.0.1
         depends_on:
-            - couchbase-server1
+            - db1
             - loki
         environment:
             - COUCHBASE_LOGS=/opt/couchbase/var/lib/couchbase/logs
@@ -44,11 +47,17 @@ services:
             - ./fluent-bit.conf:/fluent-bit/config/fluent-bit.conf:ro
         networks:
             - back
-    prometheus-exporter:
-        container_name: prometheus_exporter
+    exporter:
+        container_name: exporter
         image: couchbase/exporter:1.0.4
         depends_on:
-            - couchbase-server1
+            - db1
+        links:
+            - db1:db1
+            - db2:db2
+            - db3:db3
+        command:
+            - '--couchbase-address=db1'
         networks:
             - back
 
@@ -116,6 +125,7 @@ services:
         links:
             - cadvisor:cadvisor
             - alertmanager:alertmanager
+            - exporter:exporter
         depends_on:
             - cadvisor
         networks:
