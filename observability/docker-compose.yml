@@ -84,7 +84,7 @@ services:
 
     grafana:
         # Default creds are admin:password
-        image: grafana/grafana:latest
+        image: grafana/grafana:7.5.2
         ports:
             - "3000:3000"
         networks:
