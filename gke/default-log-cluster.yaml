@@ -17,6 +17,9 @@ kind: CouchbaseCluster
 metadata:
   name: cb-example-default
 spec:
+  cluster:
+    # Add this purely to speed up things in the demo
+    autoFailoverTimeout: 10s
   autoResourceAllocation: 
     enabled: true
   logging:
