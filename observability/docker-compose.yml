@@ -5,18 +5,18 @@ networks:
 
 services:
     # Couchbase bits
-    cb-init:
-        container_name: cb-init
-        image: couchbase:6.6.1
-        volumes:
-        - ./setupCluster.sh:/setup.sh
-        command: bash /setup.sh
-        networks: 
-            - back
+    # cb-init:
+    #     container_name: cb-init
+    #     image: couchbase:6.6.2
+    #     volumes:
+    #     - ./setupCluster.sh:/setup.sh
+    #     command: bash /setup.sh
+    #     networks: 
+    #         - back
 
     db1:
         container_name: db1
-        image: couchbase:6.6.1
+        image: couchbase:6.6.2
         ports:
             - "8091-8096:8091-8096"
             - "11210-11211:11210-11211"
@@ -28,7 +28,7 @@ services:
                     - couchbase1.compose.local
     db2:
         container_name: db2
-        image: couchbase:6.6.1
+        image: couchbase:6.6.2
         expose:
             - "8091-8096"
             - "11210-11211"
@@ -38,7 +38,7 @@ services:
                     - couchbase2.compose.local
     db3:
         container_name: db3
-        image: couchbase:6.6.1
+        image: couchbase:6.6.2
         expose:
             - "8091-8096"
             - "11210-11211"
@@ -86,7 +86,7 @@ services:
         # Default creds are admin:password
         image: grafana/grafana:7.5.2
         ports:
-            - "3000:3000"
+            - "4000:3000"
         networks:
             - front
             - back

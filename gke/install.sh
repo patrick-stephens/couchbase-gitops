@@ -2,15 +2,17 @@
 set -eux
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-DAC_IMAGE=couchbaseqe/couchbase-operator-admission:b771f1c6a6a94547e1da6823678d5d0873c51005
-OP_IMAGE=couchbaseqe/couchbase-operator:b771f1c6a6a94547e1da6823678d5d0873c51005
+# IMAGE_HASH=b771f1c6a6a94547e1da6823678d5d0873c51005
+IMAGE_HASH=b137de93d9352ab902194c424940efd1424cfe25
+DAC_IMAGE=couchbaseqe/couchbase-operator-admission:$IMAGE_HASH
+OP_IMAGE=couchbaseqe/couchbase-operator:$IMAGE_HASH
 SERVER_IMAGE=${SERVER_IMAGE:-couchbase/server:6.6.1}
 
 # Find the relevant git repos locally
 OPERATOR_REPO_DIR=$(find $SCRIPT_DIR/../../ -type d -name "couchbase-operator" -print0)
 
 #gcloud beta container --project "couchbase-engineering" clusters create-auto "autopilot-logging-test" --region "us-east1" --release-channel "regular" --network "projects/couchbase-engineering/global/networks/default" --subnetwork "projects/couchbase-engineering/regions/us-east1/subnetworks/default" --cluster-ipv4-cidr "/17" --services-ipv4-cidr "/22"
-gcloud container clusters get-credentials autopilot-logging-ci --region us-east1 --project couchbase-engineering
+gcloud container clusters get-credentials autopilot-logging-ci --region us-central1 --project couchbase-engineering
 kubectl create clusterrolebinding patrick-stephens-admin-binding --clusterrole cluster-admin --user patrick.stephens@couchbase.com
 
 # Delete
@@ -25,20 +27,21 @@ kubectl create -f "${OPERATOR_REPO_DIR}/example/crd.yaml"
 
 helm repo add grafana https://grafana.github.io/helm-charts
 helm repo update
-kubectl create namespace logging
+#kubectl create namespace logging
 #do we want to remove persistence in case it fills up??!
 #helm upgrade --debug --install loki --namespace=logging grafana/loki-stack --set grafana.enabled=true,prometheus.enabled=false,loki.persistence.enabled=true,loki.persistence.storageClassName=standard,loki.persistence.size=5Gi,promtail.enabled=false
 helm upgrade --debug --install loki grafana/loki-stack --set grafana.enabled=true,prometheus.enabled=false,promtail.enabled=false
 
 # Wait for deployment to complete
 echo "Waiting for Grafana to start up..."
-until kubectl rollout status -n logging deployment/loki-grafana; do
+until kubectl rollout status deployment/loki-grafana; do
     echo -n '.'
     sleep 2
 done
 echo "Grafana running"
 
 kubectl get secret loki-grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
+# kubectl port-forward service/loki-grafana 3000:80
 
 # Need to wait for operator and DAC to start up
 echo "Waiting for DAC to complete..."
