@@ -1,4 +1,7 @@
 modules:
+  tcp_connect_valid:
+    prober: tcp
+    timeout: 5s
   http_2xx:
     prober: http
     http:
