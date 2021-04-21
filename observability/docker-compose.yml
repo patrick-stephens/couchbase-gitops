@@ -51,6 +51,9 @@ services:
     logging:
         container_name: logging
         image: couchbase/fluent-bit:1.0.1
+        expose:
+            # Metrics
+            - "2020:2020"
         depends_on:
             - db1
             - loki
