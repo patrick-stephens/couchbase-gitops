@@ -73,6 +73,18 @@ services:
         networks:
             - back
 
+    blackbox:
+        container_name: blackbox
+        image: prom/blackbox-exporter
+        ports:
+            - "9115:9115"
+        depends_on:
+            - db1
+        volumes:
+            - ./blackbox/blackbox.yml:/etc/blackbox_exporter/config.yml:ro
+        networks:
+            - back
+    
     # PLG bits from https://github.com/vegasbrianc/prometheus
     loki:
         image: grafana/loki:2.0.0
