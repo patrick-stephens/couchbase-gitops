@@ -51,7 +51,7 @@ services:
     logging:
         container_name: logging
         image: couchbase/fluent-bit:1.0.1
-        expose:
+        ports:
             # Metrics
             - "2020:2020"
         depends_on:
