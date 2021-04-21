@@ -452,6 +452,62 @@
       "timeShift": null,
       "title": "Couchbase logs rate",
       "type": "timeseries"
+    },
+    {
+      "datasource": "Loki",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 19
+      },
+      "id": 20,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "text": {}
+      },
+      "pluginVersion": "7.5.2",
+      "targets": [
+        {
+          "expr": "sum(count_over_time({job=\"couchbase-fluentbit\"}[1m])) by (level)",
+          "instant": false,
+          "range": true,
+          "refId": "Log levels per minute"
+        }
+      ],
+      "title": "Couchbase log levels per minute",
+      "type": "bargauge"
     }
   ],
   "refresh": "5s",
@@ -469,5 +525,5 @@
   "timezone": "",
   "title": "Healthcheck",
   "uid": "fNePPruMk",
-  "version": 8
+  "version": 1
 }
