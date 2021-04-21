@@ -14,6 +14,8 @@ services:
     #     networks: 
     #         - back
 
+    # TODO: Add node problem detector with custom checks
+
     db1:
         container_name: db1
         image: couchbase:6.6.2
