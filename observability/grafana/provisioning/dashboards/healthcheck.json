@@ -131,11 +131,12 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "cbnode_up",
-          "instant": false,
+          "expr": "cbnode_healthy",
+          "format": "time_series",
+          "instant": true,
           "interval": "",
           "legendFormat": "",
-          "refId": "A"
+          "refId": "Healthy node"
         }
       ],
       "title": "Couchbase nodes",
@@ -146,28 +147,7 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "graph": false,
-              "legend": false,
-              "tooltip": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": true
+            "mode": "thresholds"
           },
           "mappings": [],
           "thresholds": {
@@ -182,8 +162,7 @@
                 "value": 80
               }
             ]
-          },
-          "unit": "short"
+          }
         },
         "overrides": []
       },
@@ -195,28 +174,34 @@
       },
       "id": 8,
       "options": {
-        "graph": {},
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
         },
-        "tooltipOptions": {
-          "mode": "single"
-        }
+        "text": {},
+        "textMode": "auto"
       },
       "pluginVersion": "7.5.2",
       "targets": [
         {
           "exemplar": true,
-          "expr": "cbnode_up",
+          "expr": "cbnode_healthy",
           "interval": "",
           "legendFormat": "",
           "refId": "Node up"
         }
       ],
+      "timeFrom": null,
+      "timeShift": null,
       "title": "Couchbase metrics",
-      "type": "timeseries"
+      "type": "stat"
     },
     {
       "datasource": null,
