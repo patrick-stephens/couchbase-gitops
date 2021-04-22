@@ -15,7 +15,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "iteration": 1619096643922,
+  "iteration": 1619105062077,
   "links": [
     {
       "asDropdown": false,
@@ -118,139 +118,11 @@
     },
     {
       "datasource": null,
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 8
-      },
-      "id": 24,
-      "pluginVersion": "7.5.2",
-      "targets": [
-        {
-          "exemplar": true,
-          "expr": "cbnode_healthy",
-          "format": "time_series",
-          "instant": true,
-          "interval": "",
-          "legendFormat": "",
-          "refId": "Healthy node"
-        }
-      ],
-      "title": "Couchbase nodes",
-      "type": "nodeGraph"
-    },
-    {
-      "datasource": null,
-      "description": "Links to dashboards for more detailed information",
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 8
-      },
-      "id": 22,
-      "options": {
-        "folderId": null,
-        "maxItems": 10,
-        "query": "",
-        "showHeadings": true,
-        "showRecentlyViewed": false,
-        "showSearch": false,
-        "showStarred": true,
-        "tags": []
-      },
-      "pluginVersion": "7.5.2",
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Detail dashboards",
-      "type": "dashlist"
-    },
-    {
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 16
-      },
-      "id": 8,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "text": {},
-        "textMode": "auto"
-      },
-      "pluginVersion": "7.5.2",
-      "targets": [
-        {
-          "exemplar": true,
-          "expr": "cbnode_healthy",
-          "format": "time_series",
-          "interval": "",
-          "legendFormat": "",
-          "refId": "Node up"
-        }
-      ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Couchbase metrics",
-      "transformations": [
-        {
-          "id": "labelsToFields",
-          "options": {
-            "valueLabel": "node"
-          }
-        }
-      ],
-      "type": "stat"
-    },
-    {
-      "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 24
+        "y": 8
       },
       "id": 18,
       "title": "System checks",
@@ -301,7 +173,7 @@
         "h": 4,
         "w": 3,
         "x": 0,
-        "y": 25
+        "y": 9
       },
       "id": 28,
       "links": [],
@@ -379,7 +251,7 @@
         "h": 4,
         "w": 3,
         "x": 3,
-        "y": 25
+        "y": 9
       },
       "id": 29,
       "links": [],
@@ -455,7 +327,7 @@
         "h": 4,
         "w": 3,
         "x": 6,
-        "y": 25
+        "y": 9
       },
       "id": 30,
       "links": [],
@@ -523,7 +395,7 @@
         "h": 4,
         "w": 3,
         "x": 9,
-        "y": 25
+        "y": 9
       },
       "hideTimeOverride": false,
       "id": 40,
@@ -608,7 +480,7 @@
         "h": 4,
         "w": 3,
         "x": 12,
-        "y": 25
+        "y": 9
       },
       "id": 41,
       "links": [],
@@ -682,7 +554,7 @@
         "h": 4,
         "w": 3,
         "x": 15,
-        "y": 25
+        "y": 9
       },
       "id": 42,
       "links": [],
@@ -721,15 +593,7 @@
           "color": {
             "mode": "thresholds"
           },
-          "mappings": [
-            {
-              "id": 0,
-              "op": "=",
-              "text": "N/A",
-              "type": 1,
-              "value": "null"
-            }
-          ],
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -751,7 +615,7 @@
         "h": 2,
         "w": 2,
         "x": 18,
-        "y": 25
+        "y": 9
       },
       "id": 43,
       "interval": null,
@@ -827,7 +691,7 @@
         "h": 2,
         "w": 4,
         "x": 20,
-        "y": 25
+        "y": 9
       },
       "hideTimeOverride": true,
       "id": 44,
@@ -908,7 +772,7 @@
         "h": 2,
         "w": 2,
         "x": 18,
-        "y": 27
+        "y": 11
       },
       "id": 45,
       "interval": null,
@@ -983,7 +847,7 @@
         "h": 2,
         "w": 2,
         "x": 20,
-        "y": 27
+        "y": 11
       },
       "id": 46,
       "interval": null,
@@ -1056,7 +920,7 @@
         "h": 2,
         "w": 2,
         "x": 22,
-        "y": 27
+        "y": 11
       },
       "id": 47,
       "interval": null,
@@ -1123,7 +987,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 29
+        "y": 13
       },
       "id": 49,
       "options": {
@@ -1146,22 +1010,26 @@
         {
           "exemplar": true,
           "expr": "cbip_db1_port_8091_open\n",
+          "format": "time_series",
+          "instant": false,
           "interval": "",
           "legendFormat": "DB1 - 8091",
           "refId": "DB1 - 8091"
         },
         {
-          "exemplar": true,
+          "exemplar": false,
           "expr": "cbip_db1_port_12345_open",
           "hide": false,
+          "instant": false,
           "interval": "",
           "legendFormat": "DB1 - 12345",
           "refId": "DB1 - 12345 - failing"
         },
         {
-          "exemplar": true,
+          "exemplar": false,
           "expr": "cbip_db2_port_8091_open",
           "hide": false,
+          "instant": false,
           "interval": "",
           "legendFormat": "DB2 - 8092",
           "refId": "DB2 - 8091"
@@ -1172,18 +1040,107 @@
       "type": "stat"
     },
     {
-      "collapsed": false,
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
       "datasource": null,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 37
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
       },
-      "id": 16,
-      "panels": [],
-      "title": "Cluster checks (REST)",
-      "type": "row"
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 13
+      },
+      "hiddenSeries": false,
+      "id": 8,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.5.2",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "cbbucketstat_cpu_utilization_rate{bucket=~\"default\"}",
+          "format": "time_series",
+          "interval": "",
+          "legendFormat": "",
+          "refId": "Node up"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Couchbase Bucket CPU utilisation",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "transformations": [
+        {
+          "id": "labelsToFields",
+          "options": {
+            "valueLabel": "node"
+          }
+        }
+      ],
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
     },
     {
       "collapsed": false,
@@ -1192,7 +1149,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 38
+        "y": 21
       },
       "id": 4,
       "panels": [],
@@ -1252,7 +1209,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 39
+        "y": 22
       },
       "hiddenSeries": false,
       "id": 14,
@@ -1355,7 +1312,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 39
+        "y": 22
       },
       "id": 10,
       "options": {
@@ -1425,7 +1382,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 47
+        "y": 30
       },
       "id": 2,
       "options": {
@@ -1479,7 +1436,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 47
+        "y": 30
       },
       "id": 20,
       "options": {
@@ -1633,5 +1590,5 @@
   "timezone": "",
   "title": "Healthcheck",
   "uid": "fNePPruMk",
-  "version": 1
+  "version": 2
 }
