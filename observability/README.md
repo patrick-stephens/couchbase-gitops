@@ -12,3 +12,5 @@ Add the two servers for db2 and db3, you can get the IP address for each like so
 docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' db2
 docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' db3
 ```
+
+Textfile collector scripts: https://github.com/prometheus-community/node-exporter-textfile-collector-scripts
