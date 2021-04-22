@@ -15,7 +15,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "iteration": 1619106446124,
+  "iteration": 1619107720124,
   "links": [
     {
       "asDropdown": false,
@@ -1040,6 +1040,64 @@
       "type": "stat"
     },
     {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "percentage",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 9,
+        "x": 3,
+        "y": 13
+      },
+      "id": 51,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "text": {}
+      },
+      "pluginVersion": "7.5.2",
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "sum by (node) (cbnode_interestingstats_couch_docs_actual_disk_size)",
+          "interval": "",
+          "legendFormat": "{{node}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Disk usage of docs per node",
+      "type": "bargauge"
+    },
+    {
       "aliasColors": {},
       "bars": false,
       "dashLength": 10,
@@ -1086,7 +1144,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "cbbucketstat_cpu_utilization_rate{bucket=~\"default\"}",
+          "expr": "cbnode_systemstats_cpu_utilization_rate",
           "format": "time_series",
           "interval": "",
           "legendFormat": "",
@@ -1097,7 +1155,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Couchbase Bucket CPU utilisation",
+      "title": "Couchbase Node CPU utilisation",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -1590,5 +1648,5 @@
   "timezone": "",
   "title": "Healthcheck",
   "uid": "fNePPruMk",
-  "version": 3
+  "version": 4
 }
