@@ -105,7 +105,58 @@ services:
             - ./blackbox/blackbox.yml:/etc/blackbox_exporter/config.yml:ro
         networks:
             - back
-    
+
+    # node-exporter:
+    #     image: prom/node-exporter:latest
+    #     container_name: monitoring_node_exporter
+    #     expose:
+    #         - 9100
+    #     networks:
+    #         - back
+    # https://github.com/stefanprodan/dockprom/blob/master/docker-compose.yml
+    nodeexporter:
+        image: prom/node-exporter:v1.1.2
+        container_name: nodeexporter
+        volumes:
+            - /proc:/host/proc:ro
+            - /sys:/host/sys:ro
+            - /:/rootfs:ro
+        command:
+            - '--path.procfs=/host/proc'
+            - '--path.rootfs=/rootfs'
+            - '--path.sysfs=/host/sys'
+            - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)'
+        expose:
+            - 9100
+        networks:
+            - back
+
+    pushgateway:
+        image: prom/pushgateway:v1.4.0
+        container_name: pushgateway
+        expose:
+            - 9091
+        networks:
+            - back
+
+    # Caddy (reverse proxy and basic auth provider for prometheus and alertmanager)
+    # caddy:
+    #     image: caddy:2.3.0
+    #     container_name: caddy
+    #     ports:
+    #         - "3000:3000"
+    #         - "9090:9090"
+    #         - "9093:9093"
+    #         - "9091:9091"
+    #     volumes:
+    #         - ./caddy:/etc/caddy
+    #     environment:
+    #         - ADMIN_USER=${ADMIN_USER:-admin}
+    #         - ADMIN_PASSWORD=${ADMIN_PASSWORD:-password}
+    #         NEED hash
+    #     networks:
+    #         - back
+
     # PLG bits from https://github.com/vegasbrianc/prometheus
     loki:
         image: grafana/loki:2.0.0
