@@ -15,7 +15,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "iteration": 1619093745885,
+  "iteration": 1619096643922,
   "links": [
     {
       "asDropdown": false,
@@ -1090,13 +1090,95 @@
       "type": "stat"
     },
     {
+      "datasource": null,
+      "description": "Various bespoke port checks run by custom metric collector",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 0
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 29
+      },
+      "id": 49,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "7.5.2",
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "cbip_db1_port_8091_open\n",
+          "interval": "",
+          "legendFormat": "DB1 - 8091",
+          "refId": "DB1 - 8091"
+        },
+        {
+          "exemplar": true,
+          "expr": "cbip_db1_port_12345_open",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "DB1 - 12345",
+          "refId": "DB1 - 12345 - failing"
+        },
+        {
+          "exemplar": true,
+          "expr": "cbip_db2_port_8091_open",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "DB2 - 8092",
+          "refId": "DB2 - 8091"
+        }
+      ],
+      "title": "Port checks",
+      "transformations": [],
+      "type": "stat"
+    },
+    {
       "collapsed": false,
       "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 29
+        "y": 37
       },
       "id": 16,
       "panels": [],
@@ -1110,7 +1192,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 30
+        "y": 38
       },
       "id": 4,
       "panels": [],
@@ -1170,7 +1252,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 31
+        "y": 39
       },
       "hiddenSeries": false,
       "id": 14,
@@ -1273,7 +1355,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 31
+        "y": 39
       },
       "id": 10,
       "options": {
@@ -1343,7 +1425,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 39
+        "y": 47
       },
       "id": 2,
       "options": {
@@ -1397,7 +1479,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 39
+        "y": 47
       },
       "id": 20,
       "options": {
@@ -1551,5 +1633,5 @@
   "timezone": "",
   "title": "Healthcheck",
   "uid": "fNePPruMk",
-  "version": 18
+  "version": 1
 }

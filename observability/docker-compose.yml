@@ -141,6 +141,7 @@ services:
             - ./customCheckScript.sh:/customCheckScript.sh
         environment: 
             - TEXTFILE_COLLECTOR_DIR=/custom-logs
+            - REPORTING_PERIOD_SECS=30
         command: /bin/bash /customCheckScript.sh 
         networks: 
             - back
