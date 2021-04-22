@@ -64,20 +64,36 @@ services:
             - ./fluent-bit.conf:/fluent-bit/config/fluent-bit.conf:ro
         networks:
             - back
-    exporter:
-        container_name: exporter
+
+    # Add an exporter for each
+    exporter_db1:
+        container_name: exporter_db1
         image: couchbase/exporter:1.0.4
         depends_on:
             - db1
-        links:
-            - db1:db1
-            - db2:db2
-            - db3:db3
         command:
             - '--couchbase-address=db1'
         networks:
             - back
-
+    exporter_db2:
+        container_name: exporter_db2
+        image: couchbase/exporter:1.0.4
+        depends_on:
+            - db2
+        command:
+            - '--couchbase-address=db2'
+        networks:
+            - back
+    exporter_db3:
+        container_name: exporter_db3
+        image: couchbase/exporter:1.0.4
+        depends_on:
+            - db3
+        command:
+            - '--couchbase-address=db3'
+        networks:
+            - back
+                        
     blackbox:
         container_name: blackbox
         image: prom/blackbox-exporter
@@ -111,6 +127,7 @@ services:
             - grafana_data:/var/lib/grafana
             # Put default data sources here
             - ./grafana/provisioning/:/etc/grafana/provisioning/
+            - ./grafana/cblogo.png:/usr/share/grafana/public/img/cblogo.png
         env_file:
             - ./grafana/config.grafana
 
@@ -154,7 +171,9 @@ services:
         links:
             - cadvisor:cadvisor
             - alertmanager:alertmanager
-            - exporter:exporter
+            - exporter_db1:exporter_db1
+            - exporter_db2:exporter_db2
+            - exporter_db3:exporter_db3
         depends_on:
             - cadvisor
         networks:

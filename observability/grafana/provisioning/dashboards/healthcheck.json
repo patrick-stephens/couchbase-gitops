@@ -86,7 +86,7 @@
     },
     {
       "datasource": null,
-      "description": "Links to dashboards for more detailed information",
+      "description": "",
       "fieldConfig": {
         "defaults": {},
         "overrides": []
@@ -97,22 +97,23 @@
         "x": 12,
         "y": 0
       },
-      "id": 22,
+      "id": 26,
+      "links": [
+        {
+          "targetBlank": true,
+          "title": "Enable advanced monitoring",
+          "url": "http://www.couchbase.com/advanced-monitoring-signup"
+        }
+      ],
       "options": {
-        "folderId": null,
-        "maxItems": 10,
-        "query": "",
-        "showHeadings": true,
-        "showRecentlyViewed": false,
-        "showSearch": false,
-        "showStarred": true,
-        "tags": []
+        "content": "<img src=\"/public/img/cblogo.png\" />\n\n\n# Advanced monitoring\n[\"Get access to shiny new features!\"](http://www.couchbase.com/advanced-monitoring-signup)",
+        "mode": "markdown"
       },
       "pluginVersion": "7.5.2",
       "timeFrom": null,
       "timeShift": null,
-      "title": "Detail dashboards",
-      "type": "dashlist"
+      "title": "Enable advanced monitoring",
+      "type": "text"
     },
     {
       "datasource": null,
@@ -144,6 +145,36 @@
     },
     {
       "datasource": null,
+      "description": "Links to dashboards for more detailed information",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "id": 22,
+      "options": {
+        "folderId": null,
+        "maxItems": 10,
+        "query": "",
+        "showHeadings": true,
+        "showRecentlyViewed": false,
+        "showSearch": false,
+        "showStarred": true,
+        "tags": []
+      },
+      "pluginVersion": "7.5.2",
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Detail dashboards",
+      "type": "dashlist"
+    },
+    {
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -170,7 +201,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 8
+        "y": 16
       },
       "id": 8,
       "options": {
@@ -193,6 +224,7 @@
         {
           "exemplar": true,
           "expr": "cbnode_healthy",
+          "format": "time_series",
           "interval": "",
           "legendFormat": "",
           "refId": "Node up"
@@ -201,6 +233,14 @@
       "timeFrom": null,
       "timeShift": null,
       "title": "Couchbase metrics",
+      "transformations": [
+        {
+          "id": "labelsToFields",
+          "options": {
+            "valueLabel": "node"
+          }
+        }
+      ],
       "type": "stat"
     },
     {
@@ -209,7 +249,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 16
+        "y": 24
       },
       "id": 18,
       "title": "System checks",
@@ -222,7 +262,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 17
+        "y": 25
       },
       "id": 16,
       "panels": [],
@@ -236,7 +276,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 18
+        "y": 26
       },
       "id": 4,
       "panels": [],
@@ -296,7 +336,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 19
+        "y": 27
       },
       "hiddenSeries": false,
       "id": 14,
@@ -399,7 +439,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 19
+        "y": 27
       },
       "id": 10,
       "options": {
@@ -469,7 +509,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 27
+        "y": 35
       },
       "id": 2,
       "options": {
@@ -523,7 +563,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 27
+        "y": 35
       },
       "id": 20,
       "options": {
@@ -544,6 +584,7 @@
         {
           "expr": "sum(count_over_time({job=\"couchbase-fluentbit\"}[1m])) by (level)",
           "instant": false,
+          "legendFormat": "{{level}}",
           "range": true,
           "refId": "Log levels per minute"
         }
@@ -567,5 +608,5 @@
   "timezone": "",
   "title": "Healthcheck",
   "uid": "fNePPruMk",
-  "version": 1
+  "version": 2
 }

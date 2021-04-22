@@ -35,13 +35,16 @@ scrape_configs:
       port: 8080
 #     static_configs:
 #          - targets: ['cadvisor:8080']
+
   - job_name: 'couchbase'
     scrape_interval: 5s
     static_configs:
-         - targets: ['exporter:9091']
+         - targets: ['exporter_db1:9091', 'exporter_db2:9091', 'exporter_db3:9091' ]
+  
   - job_name: 'fluentbit'
     static_configs:
          - targets: ['logging:2020']
+  
   - job_name: 'blackbox'
     metrics_path: /probe 
     params:
