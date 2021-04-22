@@ -15,7 +15,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "iteration": 1619105062077,
+  "iteration": 1619106446124,
   "links": [
     {
       "asDropdown": false,
@@ -985,7 +985,7 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
+        "w": 3,
         "x": 0,
         "y": 13
       },
@@ -1590,5 +1590,5 @@
   "timezone": "",
   "title": "Healthcheck",
   "uid": "fNePPruMk",
-  "version": 2
+  "version": 3
 }
