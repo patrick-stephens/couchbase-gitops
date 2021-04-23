@@ -15,7 +15,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "iteration": 1619174034417,
+  "iteration": 1619175423667,
   "links": [
     {
       "asDropdown": false,
@@ -123,7 +123,7 @@
           {
             "evaluator": {
               "params": [
-                0.8
+                0.7
               ],
               "type": "gt"
             },
@@ -202,7 +202,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "rate(node_cpu_seconds_total[10s])",
+          "expr": "rate(node_cpu_seconds_total{mode!=\"idle\"}[10s])",
           "interval": "",
           "legendFormat": "CPU {{cpu}} - {{mode}}",
           "refId": "Overload"
@@ -214,7 +214,7 @@
           "fill": true,
           "line": true,
           "op": "gt",
-          "value": 0.8,
+          "value": 0.7,
           "visible": true
         }
       ],
