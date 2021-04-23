@@ -14,3 +14,13 @@ docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' db3
 ```
 
 Textfile collector scripts: https://github.com/prometheus-community/node-exporter-textfile-collector-scripts
+
+You may need to configure `/` as a shareable directory for the docker runtime.
+We can also scrape metrics from the container engine for docker desktop on port 9323:
+```
+{
+  "experimental": true,
+  "metrics-addr": "127.0.0.1:9323"
+}
+```
+The stack should run without this though, it just may not get all the metrics for all the dashboards.
