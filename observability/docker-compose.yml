@@ -4,18 +4,6 @@ networks:
     back:
 
 services:
-    # Couchbase bits
-    # cb-init:
-    #     container_name: cb-init
-    #     image: couchbase:6.6.2
-    #     volumes:
-    #     - ./setupCluster.sh:/setup.sh
-    #     command: bash /setup.sh
-    #     networks: 
-    #         - back
-
-    # TODO: Add node problem detector with custom checks
-
     db1:
         container_name: db1
         # image: couchbase:6.6.2
