@@ -15,7 +15,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "iteration": 1619170010278,
+  "iteration": 1619174034417,
   "links": [
     {
       "asDropdown": false,
@@ -1604,7 +1604,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
-            "drawStyle": "bars",
+            "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
             "hideFrom": {
@@ -1613,6 +1613,9 @@
               "tooltip": false
             },
             "lineInterpolation": "linear",
+            "lineStyle": {
+              "fill": "solid"
+            },
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
@@ -1660,9 +1663,9 @@
       "pluginVersion": "7.5.2",
       "targets": [
         {
-          "expr": "rate({job=\"couchbase-fluentbit\"}[$__interval])",
-          "legendFormat": "{{level}}: {{filename}}",
-          "refId": "Error rate"
+          "expr": "sum by (job, filename)(rate({job=\"couchbase-fluentbit\"}[$__interval]))",
+          "legendFormat": "{{filename}}",
+          "refId": "Log file rate"
         }
       ],
       "timeFrom": null,
@@ -1795,5 +1798,5 @@
   "timezone": "",
   "title": "Healthcheck",
   "uid": "fNePPruMk",
-  "version": 7
+  "version": 1
 }
