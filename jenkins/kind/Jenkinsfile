@@ -12,6 +12,7 @@ pipeline {
   stages {
     stage('Install tools locally') {
       steps {
+        cleanWs()
         sh 'wget -q -O- https://dl.google.com/go/go${GOVERSION}.linux-amd64.tar.gz | tar xz'
         sh '''
         mkdir -p kind/bin
