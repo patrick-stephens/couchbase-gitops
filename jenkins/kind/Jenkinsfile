@@ -20,8 +20,8 @@ pipeline {
         '''
         sh '''
         mkdir -p kubectl/bin
-        curl -LO "https://dl.k8s.io/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256"
-        mv ./kubectl kubectl/bin/kubectl
+        curl -Lo kubectl/bin/kubectl "https://dl.k8s.io/${env.K8S_VERSION}/bin/linux/amd64/kubectl.sha256"
+        chmod +x kubectl/bin/kubectl
         '''
       }
     }
