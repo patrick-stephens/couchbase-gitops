@@ -31,7 +31,7 @@ pipeline {
       steps {
         sh 'kind delete cluster --name test || true'
         sh 'kind create cluster --name test --image kindest/node:${K8S_VERSION} --kubeconfig kubeconfig.${K8S_VERSION}'
-        sh 'kubectl --kubeconfig kubeconfig.${K8S_VERSION} cluster-info'
+        sh 'kubectl cluster-info --context kind-test --kubeconfig kubeconfig.${K8S_VERSION}'
         sh '''
             export KUBECONFIG=kubeconfig.${K8S_VERSION}
 
