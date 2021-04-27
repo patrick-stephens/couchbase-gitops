@@ -3,4 +3,6 @@ image:
   file: gitpod/Dockerfile
 ports:
   - port: 2020
+    onOpen: ignore
   - port: 8091
+    onOpen: open-preview
