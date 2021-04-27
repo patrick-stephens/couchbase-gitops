@@ -10,9 +10,8 @@ ENV FLB_SOURCE $FLB_TARBALL
 
 RUN mkdir -p /fluent-bit/bin /fluent-bit/etc /fluent-bit/log /tmp/fluent-bit-master/
 
-RUN echo "Europe/Zurich" > /etc/timezone && dpkg-reconfigure -f noninteractive tzdata
-
-RUN apt-get update && \
+RUN echo "Europe/Zurich" > /etc/timezone && \
+    apt-get update && \
     apt-get install -y --no-install-recommends \
     build-essential \
     curl \
@@ -29,6 +28,7 @@ RUN apt-get update && \
     postgresql-server-dev-all \
     flex \
     bison \
+    && dpkg-reconfigure -f noninteractive tzdata \
     && curl -L -o "/tmp/fluent-bit.tar.gz" ${FLB_SOURCE} \
     && cd tmp/ && mkdir fluent-bit \
     && tar zxfv fluent-bit.tar.gz -C ./fluent-bit --strip-components=1 \
