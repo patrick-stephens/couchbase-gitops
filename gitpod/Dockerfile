@@ -60,7 +60,7 @@ ENV FLUENT_BIT_HOME /fluent-bit
 
 ENV COUCHBASE_LOGS_REBALANCE_TEMPDIR /tmp/rebalance-logs
 ENV COUCHBASE_LOGS /opt/couchbase/var/couchbase/logs
-RUN mkdir -p /opt/couchbase/var/couchbase/logs /tmp/rebalance-logs
+RUN mkdir -p /opt/couchbase/var/couchbase/logs /tmp/rebalance-logs && chmod -R 777 /opt/couchbase/ && chmod -R 777 /tmp/rebalance
 
 EXPOSE 2020 8091 8092 8093 8094 8095 8096 11207 11210 11211 18091 18092 18093 18094 18095 18096
 
