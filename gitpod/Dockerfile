@@ -1,4 +1,4 @@
-FROM ubuntu:16.04 AS builder
+FROM ubuntu:20.04 AS builder
 
 # Fluent Bit version
 ENV FLB_MAJOR 1
