@@ -54,9 +54,9 @@ FROM couchbase/fluent-bit:1.0.1 as logging
 
 FROM couchbase/server:6.6.2
 
-COPY --from=builder /fluent-bit/bin/fluent-bit /opt/couchbase/bin/tools/fluent-bit/bin/fluent-bit
-COPY --from=logging /fluent-bit/etc/ /opt/couchbase/bin/tools/fluent-bit/etc/
-ENV FLUENT_BIT_HOME /opt/couchbase/bin/tools/fluent-bit
+COPY --from=logging /fluent-bit/ /fluent-bit/
+COPY --from=builder /fluent-bit/bin/fluent-bit /fluent-bit/bin/fluent-bit
+ENV FLUENT_BIT_HOME /fluent-bit
 
 EXPOSE 2020 8091 8092 8093 8094 8095 8096 11207 11210 11211 18091 18092 18093 18094 18095 18096
 
