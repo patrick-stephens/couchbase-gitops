@@ -59,10 +59,9 @@ COPY --from=logging /fluent-bit/etc/ /opt/couchbase/bin/tools/fluent-bit/etc/
 ENV FLUENT_BIT_HOME /opt/couchbase/bin/tools/fluent-bit
 EXPOSE 2020
 
-COPY fluent-entrypoint.sh /
+COPY gitpod/fluent-entrypoint.sh /
 RUN chmod a+x /fluent-entrypoint.sh
 ENTRYPOINT ["/fluent-entrypoint.sh"]
 # Overriding default entry point of base image also overrides default command
 CMD ["couchbase-server"]
 
-USER root
