@@ -3,3 +3,4 @@ image:
   file: gitpod/Dockerfile
 ports:
   - port: 2020
+  - port: 8091

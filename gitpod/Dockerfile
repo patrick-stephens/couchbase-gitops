@@ -50,10 +50,12 @@ RUN cmake -DFLB_DEBUG=On \
 RUN make -j $(getconf _NPROCESSORS_ONLN)
 RUN install bin/fluent-bit /fluent-bit/bin/
 
+FROM couchbase/fluent-bit:1.0.1 as logging
+
 FROM couchbase/server:6.6.2
 
 COPY --from=builder /fluent-bit/bin/fluent-bit /opt/couchbase/bin/tools/fluent-bit/bin/fluent-bit
-COPY *.conf /opt/couchbase/bin/tools/fluent-bit/etc/
+COPY --from=logging /fluent-bit/etc/ /opt/couchbase/bin/tools/fluent-bit/etc/
 ENV FLUENT_BIT_HOME /opt/couchbase/bin/tools/fluent-bit
 EXPOSE 2020
 
