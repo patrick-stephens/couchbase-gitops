@@ -10,6 +10,8 @@ ENV FLB_SOURCE $FLB_TARBALL
 
 RUN mkdir -p /fluent-bit/bin /fluent-bit/etc /fluent-bit/log /tmp/fluent-bit-master/
 
+RUN echo "Europe/Zurich" > /etc/timezone && dpkg-reconfigure -f noninteractive tzdata
+
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     build-essential \
