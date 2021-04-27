@@ -58,6 +58,10 @@ COPY --from=logging /fluent-bit/ /fluent-bit/
 COPY --from=builder /fluent-bit/bin/fluent-bit /fluent-bit/bin/fluent-bit
 ENV FLUENT_BIT_HOME /fluent-bit
 
+ENV COUCHBASE_LOGS_REBALANCE_TEMPDIR /tmp/rebalance-logs
+ENV COUCHBASE_LOGS /opt/couchbase/var/couchbase/logs
+RUN mkdir -p /opt/couchbase/var/couchbase/logs /tmp/rebalance-logs
+
 EXPOSE 2020 8091 8092 8093 8094 8095 8096 11207 11210 11211 18091 18092 18093 18094 18095 18096
 
 COPY gitpod/fluent-entrypoint.sh /
