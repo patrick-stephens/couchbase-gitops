@@ -59,8 +59,20 @@ COPY --from=builder /fluent-bit/bin/fluent-bit /fluent-bit/bin/fluent-bit
 ENV FLUENT_BIT_HOME /fluent-bit
 
 ENV COUCHBASE_LOGS_REBALANCE_TEMPDIR /tmp/rebalance-logs
-ENV COUCHBASE_LOGS /opt/couchbase/var/couchbase/logs
-RUN mkdir -p /opt/couchbase/var/couchbase/logs /tmp/rebalance-logs && chmod -R 777 /opt/couchbase/ && chmod -R 777 /tmp/rebalance-logs
+ENV COUCHBASE_LOGS /opt/couchbase/var/lib/couchbase/logs
+RUN mkdir -p /tmp/rebalance-logs && chmod -R 777 /tmp/rebalance-logs
+
+# Fix permissions
+WORKDIR /opt/couchbase
+RUN mkdir -p var/lib/couchbase \
+             var/lib/couchbase/config \
+             var/lib/couchbase/data \
+             var/lib/couchbase/stats \
+             var/lib/couchbase/logs \
+             var/lib/moxi && \
+    chmod -R 777 /opt/couchbase/ && \
+    chmod 777 /etc/service/couchbase-server/run
+VOLUME /opt/couchbase/var
 
 EXPOSE 2020 8091 8092 8093 8094 8095 8096 11207 11210 11211 18091 18092 18093 18094 18095 18096
 
