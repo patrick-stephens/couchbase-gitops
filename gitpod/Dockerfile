@@ -82,5 +82,5 @@ ENTRYPOINT ["/fluent-entrypoint.sh"]
 # Overriding default entry point of base image also overrides default command
 CMD ["couchbase-server"]
 
-RUN groupadd -g 1000 couchbase && useradd gitpod -u 1000 -g couchbase -M
+RUN useradd gitpod -u 1000 -g couchbase -M
 USER gitpod
