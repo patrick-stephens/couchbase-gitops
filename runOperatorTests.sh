@@ -5,7 +5,7 @@ OPERATOR_REPO_DIR=$(find $SCRIPT_DIR/../ -type d -name "couchbase-operator" -pri
 LOGSHIPPER_REPO_DIR=$(find $SCRIPT_DIR/../ -type d -name "couchbase-fluent-bit" -print0)
 
 DOCKER_TAG=${DOCKER_TAG:-v1}
-SERVER_IMAGE=${SERVER_IMAGE:-couchbase/server:6.6.1}
+SERVER_IMAGE=${SERVER_IMAGE:-couchbase/server:6.6.2}
 
 RECREATE_CLUSTER=${RECREATE_CLUSTER:-no}
 
