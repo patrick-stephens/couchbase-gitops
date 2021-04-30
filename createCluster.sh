@@ -11,7 +11,7 @@ SKIP_CLUSTER_CREATION=${SKIP_CLUSTER_CREATION:-no}
 REBUILD_ALL=${REBUILD_ALL:-yes}
 
 # Find the relevant git repos locally
-OPERATOR_REPO_DIR=$(find $SCRIPT_DIR/../ -type d -name "couchbase-operator" -print0)
+OPERATOR_REPO_DIR=$(find $SCRIPT_DIR/../ -type d -name "couchbase-operator" ! -wholename '*helm-charts/couchbase-operator*' -print0)
 LOGSHIPPER_REPO_DIR=$(find $SCRIPT_DIR/../ -type d -name "couchbase-fluent-bit" -print0)
 
 DOCKER_TAG=${DOCKER_TAG:-v1}
@@ -127,7 +127,7 @@ spec:
         image: couchbase/fluent-bit:${DOCKER_TAG}
     audit:
       enabled: true
-  image: "${SERVER_IMAGE}"
+  image: ${SERVER_IMAGE}
   security:
     adminSecret: cb-example-auth
   buckets:
