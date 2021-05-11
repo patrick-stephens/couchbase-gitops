@@ -4,14 +4,14 @@ set -eux
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 CONFIG_DIR=$(mktemp -d)
-CLUSTER_NAME=${CLUSTER:-logshipper-test}
+CLUSTER_NAME=${CLUSTER_NAME:-logshipper-test}
 CLUSTER_CONFIG="${CONFIG_DIR}/multinode-cluster-conf.yaml"
 
 SKIP_CLUSTER_CREATION=${SKIP_CLUSTER_CREATION:-no}
 REBUILD_ALL=${REBUILD_ALL:-yes}
 
 # Find the relevant git repos locally
-OPERATOR_REPO_DIR=$(find $SCRIPT_DIR/../ -type d -name "couchbase-operator" ! -wholename '*helm-charts/couchbase-operator*' -print0)
+OPERATOR_REPO_DIR=$(find $SCRIPT_DIR/../ -type d -name "couchbase-operator" ! -wholename '*helm-charts/*' -print0)
 LOGSHIPPER_REPO_DIR=$(find $SCRIPT_DIR/../ -type d -name "couchbase-fluent-bit" -print0)
 
 DOCKER_TAG=${DOCKER_TAG:-v1}
