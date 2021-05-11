@@ -120,6 +120,9 @@ kind: CouchbaseCluster
 metadata:
   name: cb-example
 spec:
+  cluster:
+    autoFailoverMaxCount: 1
+    autoFailoverTimeout: 10s
   logging:
     server:
       enabled: true
