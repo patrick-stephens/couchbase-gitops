@@ -15,7 +15,7 @@ services:
             - log-volume:/opt/couchbase/var/lib/couchbase/logs/:rw
         networks:
             back:
-                aliases: 
+                aliases:
                     - couchbase1.compose.local
     db2:
         container_name: db2
@@ -25,7 +25,7 @@ services:
             - "11210-11211"
         networks:
             back:
-                aliases: 
+                aliases:
                     - couchbase2.compose.local
     db3:
         container_name: db3
@@ -35,7 +35,7 @@ services:
             - "11210-11211"
         networks:
             back:
-                aliases: 
+                aliases:
                     - couchbase3.compose.local
     logging:
         container_name: logging
@@ -82,7 +82,7 @@ services:
             - '--couchbase-address=db3'
         networks:
             - back
-                        
+
     blackbox:
         container_name: blackbox
         image: prom/blackbox-exporter
@@ -128,11 +128,11 @@ services:
         volumes:
             - customcheck-volume:/custom-logs/
             - ./customCheckScript.sh:/customCheckScript.sh
-        environment: 
+        environment:
             - TEXTFILE_COLLECTOR_DIR=/custom-logs
             - REPORTING_PERIOD_SECS=30
-        command: /bin/bash /customCheckScript.sh 
-        networks: 
+        command: /bin/bash /customCheckScript.sh
+        networks:
             - back
 
     pushgateway:
