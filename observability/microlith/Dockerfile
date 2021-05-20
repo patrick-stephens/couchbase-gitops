@@ -1,6 +1,6 @@
 FROM grafana/grafana:7.5.2 as grafana-official
-
 FROM grafana/loki:2.0.0 as loki-official
+FROM prom/prometheus as prometheus-official
 
 # Final stage
 FROM alpine:3.13
@@ -12,6 +12,12 @@ COPY --from=grafana-official /etc/grafana /etc/grafana
 
 COPY --from=loki-official /usr/bin/loki /usr/bin/loki
 COPY --from=loki-official /etc/loki /etc/loki
+
+COPY --from=prometheus-official /bin/prometheus /bin/prometheus
+COPY --from=prometheus-official /bin/promtool /bin/promtool
+COPY --from=prometheus-official /etc/prometheus/prometheus.yml /etc/prometheus/prometheus.yml
+COPY --from=prometheus-official /usr/share/prometheus/console_libraries/ /usr/share/prometheus/console_libraries/
+COPY --from=prometheus-official /usr/share/prometheus/consoles/ /usr/share/prometheus/consoles/
 
 # GRAFANA:
 # From https://github.com/grafana/grafana/blob/main/Dockerfile
@@ -69,11 +75,35 @@ EXPOSE 3100
 # ENTRYPOINT [ "/usr/bin/loki" ]
 # CMD ["-config.file=/etc/loki/local-config.yaml"]
 
+# PROMETHEUS
+# From https://github.com/prometheus/prometheus/blob/main/Dockerfile
+RUN ln -s /usr/share/prometheus/console_libraries /usr/share/prometheus/consoles/ /etc/prometheus/
+RUN mkdir -p /prometheus && \
+    chown -R nobody:nobody /etc/prometheus /prometheus
+
+# USER       nobody
+EXPOSE     9090
+VOLUME     [ "/prometheus" ]
+WORKDIR    /prometheus
+# ENTRYPOINT [ "/bin/prometheus" ]
+# CMD        [ "--config.file=/etc/prometheus/prometheus.yml", \
+#              "--storage.tsdb.path=/prometheus", \
+#              "--web.console.libraries=/usr/share/prometheus/console_libraries", \
+#              "--web.console.templates=/usr/share/prometheus/consoles" ]
+
 WORKDIR /entrypoints
 COPY --from=grafana-official /run.sh /entrypoints/grafana.sh
 COPY --from=loki-official /usr/bin/loki /entrypoints/loki
+COPY --from=prometheus-official /bin/prometheus /entrypoints/prometheus
 RUN apk add --no-cache tini
 ENV TINI_SUBREAPER=
+
+# USER       nobody
 ENTRYPOINT [ "/sbin/tini", "--" ]
 # ENTRYPOINT ["/sbin/tini", "--", "/entrypoints/grafana.sh"]
 # ENTRYPOINT ["/sbin/tini", "--", "/entrypoints/loki", "-config.file=/etc/loki/local-config.yaml"]
+# ENTRYPOINT [ "/sbin/tini", "--", "/entrypoints/prometheus", \
+# CMD        [ "--config.file=/etc/prometheus/prometheus.yml", \
+#              "--storage.tsdb.path=/prometheus", \
+#              "--web.console.libraries=/usr/share/prometheus/console_libraries", \
+#              "--web.console.templates=/usr/share/prometheus/consoles" ]
