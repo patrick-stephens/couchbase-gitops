@@ -5,10 +5,16 @@ FROM grafana/loki:2.0.0 as loki-official
 # Final stage
 FROM alpine:3.13
 
+RUN apk add --no-cache ca-certificates bash libcap openssl musl-utils tzdata
+
+COPY --from=grafana-official /usr/share/grafana /usr/share/grafana
+COPY --from=grafana-official /etc/grafana /etc/grafana
+
+COPY --from=loki-official /usr/bin/loki /usr/bin/loki
+COPY --from=loki-official /etc/loki /etc/loki
+
 # GRAFANA:
 # From https://github.com/grafana/grafana/blob/main/Dockerfile
-RUN apk add --no-cache ca-certificates bash tzdata && \
-    apk add --no-cache openssl musl-utils
 ARG GF_UID="472"
 ARG GF_GID="0"
 
@@ -21,9 +27,6 @@ ENV PATH="/usr/share/grafana/bin:$PATH" \
     GF_PATHS_PROVISIONING="/etc/grafana/provisioning"
 
 WORKDIR $GF_PATHS_HOME
-
-RUN apk add --no-cache ca-certificates bash tzdata && \
-    apk add --no-cache openssl musl-utils
 
 RUN if [ ! $(getent group "$GF_GID") ]; then \
       addgroup -S -g $GF_GID grafana; \
@@ -51,11 +54,11 @@ EXPOSE 3000
 
 # LOKI:
 # From https://github.com/grafana/loki/blob/main/cmd/loki/Dockerfile
-RUN apk add --no-cache ca-certificates libcap
 RUN addgroup -g 10001 -S loki && \
     adduser -u 10001 -S loki -G loki
 RUN mkdir -p /loki/rules && \
     mkdir -p /loki/tmprules && \
+    mkdir -p /loki/rules-temp && \
     chown -R loki:loki /etc/loki /loki
 
 # See https://github.com/grafana/loki/issues/1928
@@ -65,3 +68,12 @@ EXPOSE 3100
 # USER loki
 # ENTRYPOINT [ "/usr/bin/loki" ]
 # CMD ["-config.file=/etc/loki/local-config.yaml"]
+
+WORKDIR /entrypoints
+COPY --from=grafana-official /run.sh /entrypoints/grafana.sh
+COPY --from=loki-official /usr/bin/loki /entrypoints/loki
+RUN apk add --no-cache tini
+ENV TINI_SUBREAPER=
+ENTRYPOINT [ "/sbin/tini", "--" ]
+# ENTRYPOINT ["/sbin/tini", "--", "/entrypoints/grafana.sh"]
+# ENTRYPOINT ["/sbin/tini", "--", "/entrypoints/loki", "-config.file=/etc/loki/local-config.yaml"]
