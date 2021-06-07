@@ -9,6 +9,7 @@ CLUSTER_CONFIG="${CONFIG_DIR}/multinode-cluster-conf.yaml"
 
 SKIP_CLUSTER_CREATION=${SKIP_CLUSTER_CREATION:-no}
 REBUILD_ALL=${REBUILD_ALL:-yes}
+CUSTOM_CB_CONFIG=${CUSTOM_CB_CONFIG:-no}
 
 # Find the relevant git repos locally
 OPERATOR_REPO_DIR=$(find $SCRIPT_DIR/../ -type d -name "couchbase-operator" ! -wholename '*helm-charts/*' -print0)
@@ -16,7 +17,7 @@ LOGSHIPPER_REPO_DIR=$(find $SCRIPT_DIR/../ -type d -name "couchbase-fluent-bit" 
 
 DOCKER_TAG=${DOCKER_TAG:-v1}
 SERVER_IMAGE=${SERVER_IMAGE:-couchbase/server:6.6.2}
-SERVER_COUNT=${SERVER_COUNT:-1}
+SERVER_COUNT=${SERVER_COUNT:-3}
 set +x
 
 if [[ "${REBUILD_ALL}" == "yes" ]]; then
@@ -53,7 +54,7 @@ EOF
     done
 
   kind delete cluster --name="${CLUSTER_NAME}" && echo "Deleted old kind cluster, creating a new one..."
-  
+
   kind create cluster --name="${CLUSTER_NAME}" --config="${CLUSTER_CONFIG}"
   echo "$(date) waiting for cluster..."
   until kubectl cluster-info;  do
@@ -99,69 +100,71 @@ EOF
   done
   echo " done"
 
-  # Now create a cluster using the specified config
-  cat << __CLUSTER_CONFIG_EOF__ | kubectl create -f -
-apiVersion: v1
-kind: Secret
-metadata:
-  name: cb-example-auth
-type: Opaque
-data:
-  username: QWRtaW5pc3RyYXRvcg== # Administrator
-  password: cGFzc3dvcmQ=         # password
----
-apiVersion: couchbase.com/v2
-kind: CouchbaseEphemeralBucket
-metadata:
-  name: default
----
-apiVersion: couchbase.com/v2
-kind: CouchbaseCluster
-metadata:
-  name: cb-example
-spec:
-  cluster:
-    autoFailoverMaxCount: 1
-    autoFailoverTimeout: 10s
-  logging:
-    server:
-      enabled: true
-      sidecar:
-        image: couchbase/fluent-bit:${DOCKER_TAG}
-    audit:
-      enabled: true
-  image: ${SERVER_IMAGE}
-  security:
-    adminSecret: cb-example-auth
-  buckets:
-    managed: true
-  servers:
-  - size: ${SERVER_COUNT}
-    name: all_services
-    services:
-    - data
-    - index
-    - query
-    - search
-    - eventing
-    - analytics
-    volumeMounts:
-      default: couchbase 
-  volumeClaimTemplates: 
-  - metadata:
-      name: couchbase 
-    spec:
-      storageClassName: standard 
-      resources: 
-        requests:
-          storage: 1Gi
+if [[ "${CUSTOM_CB_CONFIG}" != "yes" ]]; then
+    # Now create a cluster using the specified config
+    cat << __CLUSTER_CONFIG_EOF__ | kubectl apply -f -
+  apiVersion: v1
+  kind: Secret
+  metadata:
+    name: cb-example-auth
+  type: Opaque
+  data:
+    username: QWRtaW5pc3RyYXRvcg== # Administrator
+    password: cGFzc3dvcmQ=         # password
+  ---
+  apiVersion: couchbase.com/v2
+  kind: CouchbaseEphemeralBucket
+  metadata:
+    name: default
+  ---
+  apiVersion: couchbase.com/v2
+  kind: CouchbaseCluster
+  metadata:
+    name: cb-example
+  spec:
+    cluster:
+      autoFailoverMaxCount: 1
+      autoFailoverTimeout: 10s
+    logging:
+      server:
+        enabled: true
+        sidecar:
+          image: couchbase/fluent-bit:${DOCKER_TAG}
+      audit:
+        enabled: true
+    image: ${SERVER_IMAGE}
+    security:
+      adminSecret: cb-example-auth
+    buckets:
+      managed: true
+    servers:
+    - size: ${SERVER_COUNT}
+      name: all_services
+      services:
+      - data
+      - index
+      - query
+      - search
+      - eventing
+      - analytics
+      volumeMounts:
+        default: couchbase
+    volumeClaimTemplates:
+    - metadata:
+        name: couchbase
+      spec:
+        storageClassName: standard
+        resources:
+          requests:
+            storage: 1Gi
 __CLUSTER_CONFIG_EOF__
 
-  # Wait for deployment to complete
-  echo "Waiting for CB to start up..."
-  until [[ $(kubectl get pods --field-selector=status.phase=Running --selector='app=couchbase' --no-headers 2>/dev/null |wc -l) -eq $SERVER_COUNT ]]; do
-    echo -n '.'
-    sleep 2
-  done
-  echo "CB started"
+    # Wait for deployment to complete
+    echo "Waiting for CB to start up..."
+    until [[ $(kubectl get pods --field-selector=status.phase=Running --selector='app=couchbase' --no-headers 2>/dev/null |wc -l) -eq $SERVER_COUNT ]]; do
+      echo -n '.'
+      sleep 2
+    done
+    echo "CB started"
+  fi #CUSTOM_CB_CONFIG
 fi #SKIP_CLUSTER_CREATION

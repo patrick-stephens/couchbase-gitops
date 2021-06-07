@@ -45,8 +45,8 @@ nodes:
 EOF
 
   kind delete cluster || true
-  
-  if kind get clusters; then 
+
+  if kind get clusters; then
     kind delete cluster --name=$(kind get clusters)
     echo "Deleted old kind cluster, creating a new one..."
   fi
@@ -84,9 +84,9 @@ EOF
   ${REPO_DIR}/build/bin/cbopcfg create operator --image=couchbase/couchbase-operator:v1 --log-level=debug
 
   # Set up ConfigMap to use for FluentBit
-  if [[ "${USE_CUSTOM_CONFIG}" == "yes" ]]; then 
+  if [[ "${USE_CUSTOM_CONFIG}" == "yes" ]]; then
     CONFIGMAP_YAML=$(mktemp)
-    cat << __CONFIGMAP_EOF__ >> ${CONFIGMAP_YAML} 
+    cat << __CONFIGMAP_EOF__ >> ${CONFIGMAP_YAML}
 apiVersion: v1
 kind: Secret
 metadata:
@@ -108,7 +108,7 @@ stringData:
         Match *
         Add pod \${HOSTNAME}
         Add logshipper couchbase.sidecar.fluentbit
-    
+
     @include output.conf
     @include input.conf
 
@@ -127,7 +127,7 @@ stringData:
         Parser simple_log
         Path_Key filename
         Tag couchbase.log.indexer
-    # Note this logger seems to not use a common case for level strings, i.e. info, Info and INFO are all provided. 
+    # Note this logger seems to not use a common case for level strings, i.e. info, Info and INFO are all provided.
     # We can manage with some Lua scripting here or leave to downstream fluentd, etc. to deal with.
     # https://github.com/shunwen/fluent-plugin-rename-key/issues/19#issuecomment-528027457
 
@@ -161,7 +161,7 @@ stringData:
         # Filter out by using the .raw prefix
         Tag couchbase.raw.log.<logname>
         Tag_Regex \${COUCHBASE_LOGS}/(?<logname>[^.]+).log$
-    
+
   parsers.conf: |
     [PARSER]
         Name         auditdb_log
@@ -181,8 +181,8 @@ stringData:
         Format regex
         Regex ^\[(?<logger>\w+):(?<level>\w+),(?<time>\d+-\d+-\d+T\d+:\d+:\d+.\d+Z).*](?<message>.*)$
         Time_Key time
-        Time_Format %Y-%m-%dT%H:%M:%S.%L   
-        
+        Time_Format %Y-%m-%dT%H:%M:%S.%L
+
   output.conf: |
     # Output all parsed logs by default
     [OUTPUT]
@@ -230,9 +230,9 @@ spec:
         ports:
         - containerPort: 10000
 __AZURITE_EOF__
-    if [[ "${USE_CUSTOM_CONFIG}" == "yes" ]]; then 
+    if [[ "${USE_CUSTOM_CONFIG}" == "yes" ]]; then
       # Add an output to Azurite
-      cat << __CONFIGMAP_EOF__ >> ${CONFIGMAP_YAML} 
+      cat << __CONFIGMAP_EOF__ >> ${CONFIGMAP_YAML}
     [OUTPUT]
         name                  azure_blob
         match                 *
@@ -357,13 +357,13 @@ spec:
         - containerPort: 5601
 __ES_EOF__
 
-    if [[ "${USE_CUSTOM_CONFIG}" == "yes" ]]; then 
+    if [[ "${USE_CUSTOM_CONFIG}" == "yes" ]]; then
       # Add an output to Elasticsearch
-      cat << __CONFIGMAP_EOF__ >> ${CONFIGMAP_YAML} 
+      cat << __CONFIGMAP_EOF__ >> ${CONFIGMAP_YAML}
     [OUTPUT]
         name  es
         match couchbase.log.*
-        Logstash_Format On 
+        Logstash_Format On
         Include_Tag_Key On
         Tag_Key FluentBit-Key
         Host elasticsearch
@@ -371,12 +371,12 @@ __ES_EOF__
 
 __CONFIGMAP_EOF__
     fi
-    # To use kibana: 
-    # kubectl port-forward service/kibana 5601  
+    # To use kibana:
+    # kubectl port-forward service/kibana 5601
 
   fi
 
-  if [[ "${USE_CUSTOM_CONFIG}" == "yes" ]]; then 
+  if [[ "${USE_CUSTOM_CONFIG}" == "yes" ]]; then
     kubectl apply -f ${CONFIGMAP_YAML}
     rm -f ${CONFIGMAP_YAML}
   fi
@@ -425,7 +425,7 @@ spec:
     server:
       enabled: true
 __CLUSTER_CONFIG_EOF__
-    if [[ "${USE_CUSTOM_CONFIG}" == "yes" ]]; then 
+    if [[ "${USE_CUSTOM_CONFIG}" == "yes" ]]; then
       echo "Using custom config so disabling operator managed config"
       cat << __CLUSTER_CONFIG_EOF__ >> ${CLUSTER_CONFIG_YAML}
       manageConfiguration: false
@@ -464,13 +464,13 @@ __CLUSTER_CONFIG_EOF__
   if [[ "${USE_PVC}" == "yes" ]]; then
     cat << __CLUSTER_CONFIG_EOF__ >> ${CLUSTER_CONFIG_YAML}
     volumeMounts:
-      default: couchbase 
-  volumeClaimTemplates: 
+      default: couchbase
+  volumeClaimTemplates:
   - metadata:
-      name: couchbase 
+      name: couchbase
     spec:
-      storageClassName: standard 
-      resources: 
+      storageClassName: standard
+      resources:
         requests:
           storage: 1Gi
 __CLUSTER_CONFIG_EOF__
@@ -750,10 +750,10 @@ if [[ "${USE_AGGREGATOR}" == "yes" ]]; then
   helm upgrade --install loki grafana/loki-stack \
   --set fluent-bit.enabled=false,promtail.enabled=true,grafana.enabled=true,prometheus.enabled=true,prometheus.alertmanager.persistentVolume.enabled=false,prometheus.server.persistentVolume.enabled=false
   #kubectl get secret loki-grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
-  #kubectl port-forward service/loki-grafana 3000:80 
+  #kubectl port-forward service/loki-grafana 3000:80
 
   # Use https://github.com/kvaps/kubectl-node-shell to get a shell on the node
-  # nodes=$(kubectl get nodes | sed '1d' | awk '{print $1}') && for node in $nodes; do;  kubectl describe node | sed -n '/Conditions/,/Ready/p' ; done 
+  # nodes=$(kubectl get nodes | sed '1d' | awk '{print $1}') && for node in $nodes; do;  kubectl describe node | sed -n '/Conditions/,/Ready/p' ; done
 fi
 
 popd

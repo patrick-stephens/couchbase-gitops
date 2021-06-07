@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eux
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-OPERATOR_REPO_DIR=$(find $SCRIPT_DIR/../ -type d -name "couchbase-operator" ! -wholename '*helm-charts/couchbase-operator*' -print0)
+OPERATOR_REPO_DIR=$(find $SCRIPT_DIR/../ -type d -wholename '*couchbase/couchbase-operator' -print0)
 LOGSHIPPER_REPO_DIR=$(find $SCRIPT_DIR/../ -type d -name "couchbase-fluent-bit" -print0)
 
 DOCKER_TAG=${DOCKER_TAG:-v1}
