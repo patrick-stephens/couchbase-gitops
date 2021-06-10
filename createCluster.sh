@@ -12,7 +12,7 @@ REBUILD_ALL=${REBUILD_ALL:-yes}
 CUSTOM_CB_CONFIG=${CUSTOM_CB_CONFIG:-no}
 
 # Find the relevant git repos locally
-OPERATOR_REPO_DIR=$(find $SCRIPT_DIR/../ -type d -name "couchbase-operator" ! -wholename '*helm-charts/*' -print0)
+OPERATOR_REPO_DIR=$(find $SCRIPT_DIR/../ -type d -wholename '*couchbase/couchbase-operator' -print0)
 LOGSHIPPER_REPO_DIR=$(find $SCRIPT_DIR/../ -type d -name "couchbase-fluent-bit" -print0)
 
 DOCKER_TAG=${DOCKER_TAG:-v1}
