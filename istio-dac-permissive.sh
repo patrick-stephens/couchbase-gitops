@@ -29,17 +29,14 @@ kind create cluster --name="${CLUSTER_NAME}" --config="${CLUSTER_CONFIG}" --imag
 # We load the images here to make sure we do not hit rate limits when run in a loop for CI
 # These images should cover 2.1 and 2.2 and Istio 1.10.1
 declare -a IMAGES_REQUIRED=("docker.io/istio/proxyv2:1.10.1"
-"couchbase/server:6.6.0"
 "couchbase/server:6.6.2"
 "couchbase/operator:2.2.0"
 "couchbase/admission-controller:2.2.0"
-"couchbase/operator:2.1.0"
-"couchbase/admission-controller:2.1.0"
 )
 for i in "${IMAGES_REQUIRED[@]}"
 do
-   docker pull "$i"
-   kind load docker-image "$i" --name="${CLUSTER_NAME}"
+  docker pull "$i"
+  kind load docker-image "$i" --name="${CLUSTER_NAME}"
 done
 
 # Add Istio
@@ -127,7 +124,7 @@ cluster:
         size: 1
 __CLUSTER_CONFIG_EOF__
 
-helm upgrade --install -n "$NAMESPACE" test1 couchbase/couchbase-operator --values "$CB_CONFIG" #--set install.admissionController=false #--version 2.1.0
+helm upgrade --install -n "$NAMESPACE" test1 couchbase/couchbase-operator #--values "$CB_CONFIG" #--set install.admissionController=false #--version 2.1.0
 cat "$CB_CONFIG"
 rm -f "$CB_CONFIG"
 
@@ -142,12 +139,12 @@ echo "CB started"
 ORIGINAL=$(mktemp)
 UPDATED=$(mktemp)
 kubectl get -n test couchbaseclusters.couchbase.com test1-couchbase-cluster -o yaml > "$ORIGINAL"
-sed 's/size: 1/size: 2/g' "$ORIGINAL" > "$UPDATED"
+sed 's/size: 3/size: 4/g' "$ORIGINAL" > "$UPDATED"
 kubectl apply -f "$UPDATED"
 cat "$UPDATED"
 
 echo "Waiting for CB to update..."
-until [[ $(kubectl get pods -n "$NAMESPACE" --field-selector=status.phase=Running --selector='app=couchbase' --no-headers 2>/dev/null |wc -l) -eq 6 ]]; do
+until [[ $(kubectl get pods -n "$NAMESPACE" --field-selector=status.phase=Running --selector='app=couchbase' --no-headers 2>/dev/null |wc -l) -eq 4 ]]; do
     echo -n '.'
     sleep 2
 done
