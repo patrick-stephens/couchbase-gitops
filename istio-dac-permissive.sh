@@ -6,6 +6,7 @@ SERVER_COUNT=${SERVER_COUNT:-3}
 CONFIG_DIR=$(mktemp -d)
 CLUSTER_NAME=${CLUSTER_NAME:-test-istio}
 CLUSTER_CONFIG="${CONFIG_DIR}/multinode-cluster-conf.yaml"
+K8S_VERSION=${K8S_VERSION:-v1.18.8}
 
 # Create our cluster
 cat << EOF > "${CLUSTER_CONFIG}"
@@ -23,7 +24,7 @@ EOF
 done
 
 kind delete cluster --name="${CLUSTER_NAME}" && echo "Deleted old kind cluster, creating a new one..."
-kind create cluster --name="${CLUSTER_NAME}" --config="${CLUSTER_CONFIG}"
+kind create cluster --name="${CLUSTER_NAME}" --config="${CLUSTER_CONFIG}" --image kindest/node:"${K8S_VERSION}"
 
 # We load the images here to make sure we do not hit rate limits when run in a loop for CI
 # These images should cover 2.1 and 2.2 and Istio 1.10.1
@@ -101,7 +102,7 @@ rm -rf "$TEMPDIR"
 # Add Couchbase via helm chart
 helm repo add couchbase https://couchbase-partners.github.io/helm-charts/
 helm repo update
-helm upgrade --install -n $NAMESPACE test1 couchbase/couchbase-operator #--version 2.1.0
+helm upgrade --install -n $NAMESPACE test1 couchbase/couchbase-operator #--set install.admissionController=false #--version 2.1.0
 
 # Wait for 3 servers to come up
 echo "Waiting for CB to start up..."
