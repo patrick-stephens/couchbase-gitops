@@ -102,13 +102,53 @@ rm -rf "$TEMPDIR"
 # Add Couchbase via helm chart
 helm repo add couchbase https://couchbase-partners.github.io/helm-charts/
 helm repo update
-helm upgrade --install -n $NAMESPACE test1 couchbase/couchbase-operator #--set install.admissionController=false #--version 2.1.0
+
+# Now create a cluster using the specified config
+CB_CONFIG=$(mktemp)
+cat << __CLUSTER_CONFIG_EOF__ > "${CB_CONFIG}"
+cluster:
+  servers:
+      default:
+        services:
+        - data
+        - index
+        - query
+        - search
+        - analytics
+        - eventing
+        size: 1
+      indexonly:
+        services:
+        - index
+        size: 1
+      zz:
+        services:
+        - data
+        size: 1
+__CLUSTER_CONFIG_EOF__
+
+helm upgrade --install -n "$NAMESPACE" test1 couchbase/couchbase-operator --values "$CB_CONFIG" #--set install.admissionController=false #--version 2.1.0
+cat "$CB_CONFIG"
+rm -f "$CB_CONFIG"
 
 # Wait for 3 servers to come up
 echo "Waiting for CB to start up..."
-until [[ $(kubectl get pods -n $NAMESPACE --field-selector=status.phase=Running --selector='app=couchbase' --no-headers 2>/dev/null |wc -l) -eq 3 ]]; do
+until [[ $(kubectl get pods -n "$NAMESPACE" --field-selector=status.phase=Running --selector='app=couchbase' --no-headers 2>/dev/null |wc -l) -eq 3 ]]; do
     echo -n '.'
     sleep 2
 done
 echo "CB started"
 
+ORIGINAL=$(mktemp)
+UPDATED=$(mktemp)
+kubectl get -n test couchbaseclusters.couchbase.com test1-couchbase-cluster -o yaml > "$ORIGINAL"
+sed 's/size: 1/size: 2/g' "$ORIGINAL" > "$UPDATED"
+kubectl apply -f "$UPDATED"
+cat "$UPDATED"
+
+echo "Waiting for CB to update..."
+until [[ $(kubectl get pods -n "$NAMESPACE" --field-selector=status.phase=Running --selector='app=couchbase' --no-headers 2>/dev/null |wc -l) -eq 6 ]]; do
+    echo -n '.'
+    sleep 2
+done
+echo "CB updated"
