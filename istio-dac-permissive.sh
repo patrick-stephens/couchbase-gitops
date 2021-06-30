@@ -6,7 +6,7 @@ SERVER_COUNT=${SERVER_COUNT:-3}
 CONFIG_DIR=$(mktemp -d)
 CLUSTER_NAME=${CLUSTER_NAME:-test-istio}
 CLUSTER_CONFIG="${CONFIG_DIR}/multinode-cluster-conf.yaml"
-K8S_VERSION=${K8S_VERSION:-v1.18.8}
+K8S_VERSION=${K8S_VERSION:-v1.21.1}
 
 # Create our cluster
 cat << EOF > "${CLUSTER_CONFIG}"
@@ -27,15 +27,15 @@ kind delete cluster --name="${CLUSTER_NAME}" && echo "Deleted old kind cluster, 
 kind create cluster --name="${CLUSTER_NAME}" --config="${CLUSTER_CONFIG}" --image kindest/node:"${K8S_VERSION}"
 
 # We load the images here to make sure we do not hit rate limits when run in a loop for CI
-# These images should cover 2.1 and 2.2 and Istio 1.10.1
 declare -a IMAGES_REQUIRED=("docker.io/istio/proxyv2:1.10.1"
 "couchbase/server:6.6.2"
 "couchbase/operator:2.2.0"
 "couchbase/admission-controller:2.2.0"
+"couchbase/couchbase-operator:v1"
 )
 for i in "${IMAGES_REQUIRED[@]}"
 do
-  docker pull "$i"
+  docker pull "$i" || true
   kind load docker-image "$i" --name="${CLUSTER_NAME}"
 done
 
@@ -43,9 +43,9 @@ done
 TEMPDIR=$(mktemp -d)
 pushd "$TEMPDIR"
 curl -L https://istio.io/downloadIstio | sh -
-pushd istio-1.10.1/bin
+pushd istio-*/bin
 
-./istioctl install --set profile=default --skip-confirmation
+./istioctl install --set profile=default --skip-confirmation --set values.global.istiod.enableAnalysis=true --set meshConfig.accessLogFile=/dev/stdout --set values.global.proxy.privileged=true
 # https://istio.io/latest/docs/tasks/security/authentication/authn-policy/#globally-enabling-istio-mutual-tls-in-strict-mode
 kubectl apply -f - <<EOF
 ---
@@ -99,34 +99,8 @@ rm -rf "$TEMPDIR"
 # Add Couchbase via helm chart
 helm repo add couchbase https://couchbase-partners.github.io/helm-charts/
 helm repo update
-
-# Now create a cluster using the specified config
-CB_CONFIG=$(mktemp)
-cat << __CLUSTER_CONFIG_EOF__ > "${CB_CONFIG}"
-cluster:
-  servers:
-      default:
-        services:
-        - data
-        - index
-        - query
-        - search
-        - analytics
-        - eventing
-        size: 1
-      indexonly:
-        services:
-        - index
-        size: 1
-      zz:
-        services:
-        - data
-        size: 1
-__CLUSTER_CONFIG_EOF__
-
-helm upgrade --install -n "$NAMESPACE" test1 couchbase/couchbase-operator #--values "$CB_CONFIG" #--set install.admissionController=false #--version 2.1.0
-cat "$CB_CONFIG"
-rm -f "$CB_CONFIG"
+helm upgrade --install -n "$NAMESPACE" test1 couchbase/couchbase-operator --set cluster.networking.networkPlatform=Istio,couchbaseOperator.image.repository=couchbase/couchbase-operator,couchbaseOperator.image.tag=v1
+#--set install.admissionController=false #--version 2.1.0
 
 # Wait for 3 servers to come up
 echo "Waiting for CB to start up..."
