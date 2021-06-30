@@ -15,7 +15,7 @@
 
 # Simple script to provision a Kubernetes cluster using KIND: https://kind.sigs.k8s.io/
 # It then spins up a Couchbase Server cluster on it using Helm: https://helm.sh/
-# To use, need Docker (or a container runtime) installed plus KIND & Helm.
+# To use, need Docker (or a container runtime) installed plus kubectl, KIND & Helm.
 set -eu
 
 # In case you want a different name
