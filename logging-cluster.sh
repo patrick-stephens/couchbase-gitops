@@ -44,13 +44,7 @@ nodes:
 - role: worker
 EOF
 
-  kind delete cluster || true
-
-  if kind get clusters; then
-    kind delete cluster --name=$(kind get clusters)
-    echo "Deleted old kind cluster, creating a new one..."
-  fi
-
+  kind delete clusters --all
   kind create cluster --name=${CLUSTER} --config=${CONFIG}
   echo "$(date) waiting for cluster..."
   until kubectl cluster-info;  do
@@ -63,8 +57,8 @@ EOF
   kind load docker-image couchbase/couchbase-operator:v1 --name=${CLUSTER}
   kind load docker-image couchbase/couchbase-operator-admission:v1 --name=${CLUSTER}
   # Not strictly required but improves caching performance
-  docker pull couchbase/server:6.6.0
-  kind load docker-image couchbase/server:6.6.0 --name=${CLUSTER}
+  docker pull couchbase/server:6.6.2
+  kind load docker-image couchbase/server:6.6.2 --name=${CLUSTER}
   # It also slows down everything to allow the cluster to come up fully
 
   docker pull k8s.gcr.io/node-problem-detector/node-problem-detector:v0.8.6
@@ -444,7 +438,7 @@ __CLUSTER_CONFIG_EOF__
           enabled: true
           interval: "1m"
           age: "1m"
-  image: couchbase/server:6.6.0
+  image: couchbase/server:6.6.2
   security:
     adminSecret: cb-example-auth
   buckets:
