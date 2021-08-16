@@ -43,7 +43,7 @@ kind create cluster --name="${CLUSTER_NAME}" --config="${CLUSTER_CONFIG}"
 rm -f "${CLUSTER_CONFIG}"
 
 # Add Couchbase via helm chart
-helm repo add couchbase https://couchbase-partners.github.io/helm-charts/
+helm repo add couchbase https://couchbase-partners.github.io/helm-charts/ || helm repo add couchbase https://couchbase-partners.github.io/helm-charts
 # Ensure we update the repo (may have added it years ago!)
 helm repo update
 # Always installs the latest version, can be pinned with --version X
