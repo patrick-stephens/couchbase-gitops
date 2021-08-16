@@ -1,0 +1,25 @@
+# Just based on the official example: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  strategy:
+    type: Recreate # Ensure all existing pods terminate before new ones start on a roll out
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+        rollme: "3" # Always change this if the number of replicas changes then it will force a new roll out
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2 # old image
+        ports:
+        - containerPort: 80
