@@ -21,7 +21,7 @@ set -eu
 # In case you want a different name
 CLUSTER_NAME=${CLUSTER_NAME:-couchbase-test}
 # The server container image to use
-SERVER_IMAGE=${SERVER_IMAGE:-couchbase/server:6.6.2}
+SERVER_IMAGE=${SERVER_IMAGE:-couchbase/server:7.0.0}
 
 # Delete the old cluster
 kind delete cluster --name="${CLUSTER_NAME}"
@@ -41,6 +41,10 @@ EOF
 # Create the new cluster
 kind create cluster --name="${CLUSTER_NAME}" --config="${CLUSTER_CONFIG}"
 rm -f "${CLUSTER_CONFIG}"
+
+# Speed up deployment by pre-loading the server image
+docker pull "${SERVER_IMAGE}"
+kind load docker-image "${SERVER_IMAGE}" --name="${CLUSTER_NAME}"
 
 # Add Couchbase via helm chart
 helm repo add couchbase https://couchbase-partners.github.io/helm-charts/ || helm repo add couchbase https://couchbase-partners.github.io/helm-charts
