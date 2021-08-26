@@ -26,9 +26,8 @@ SERVER_IMAGE=${SERVER_IMAGE:-couchbase/server:7.0.0}
 # Delete the old cluster
 kind delete cluster --name="${CLUSTER_NAME}"
 
-# Set up KIND cluster with 3 worker nodes
-CLUSTER_CONFIG=$(mktemp)
-cat << EOF > "${CLUSTER_CONFIG}"
+# Create KIND cluster with 3 worker nodes
+kind create cluster --name="${CLUSTER_NAME}" --config - <<EOF
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
@@ -37,10 +36,6 @@ nodes:
 - role: worker
 - role: worker
 EOF
-
-# Create the new cluster
-kind create cluster --name="${CLUSTER_NAME}" --config="${CLUSTER_CONFIG}"
-rm -f "${CLUSTER_CONFIG}"
 
 # Speed up deployment by pre-loading the server image
 docker pull "${SERVER_IMAGE}"
