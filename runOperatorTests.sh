@@ -2,7 +2,7 @@
 set -eux
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 OPERATOR_REPO_DIR=$(find $SCRIPT_DIR/../ -type d -wholename '*couchbase/couchbase-operator' -print0)
-LOGSHIPPER_REPO_DIR=$(find $SCRIPT_DIR/../ -type d -name "couchbase-fluent-bit" -print0)
+LOGSHIPPER_REPO_DIR=$(find $SCRIPT_DIR/../ -type d -wholename "*couchbase/couchbase-fluent-bit" -print0)
 
 DOCKER_TAG=${DOCKER_TAG:-v1}
 SERVER_IMAGE=${SERVER_IMAGE:-couchbase/server:7.0.0}
