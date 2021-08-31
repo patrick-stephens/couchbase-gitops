@@ -10,7 +10,7 @@ SERVER_IMAGE=${SERVER_IMAGE:-couchbase/server:7.0.0}
 RECREATE_CLUSTER=${RECREATE_CLUSTER:-no}
 
 pushd "${OPERATOR_REPO_DIR}"
-    make && make container
+    make && make binaries container certification-container
 popd
 
 pushd "${LOGSHIPPER_REPO_DIR}"
@@ -24,11 +24,12 @@ fi
 kind load docker-image "couchbase/couchbase-operator:${DOCKER_TAG}"
 kind load docker-image "couchbase/couchbase-operator-admission:${DOCKER_TAG}"
 kind load docker-image "couchbase/fluent-bit:${DOCKER_TAG}"
+kind load docker-image "couchbase/couchbase-operator-certification:${DOCKER_TAG}"
 
 # Not strictly required but improves caching performance
 docker pull "${SERVER_IMAGE}"
 kind load docker-image "${SERVER_IMAGE}"
 
 pushd "${OPERATOR_REPO_DIR}"
-    go test github.com/couchbase/couchbase-operator/test/e2e -run TestOperator -v --race -timeout 24h -parallel 1 -args -color --logging-image "couchbase/fluent-bit:${DOCKER_TAG}" "$@"
+    ./build/bin/cao certify --image "couchbase/couchbase-operator-certification:${DOCKER_TAG}" --clean --parallel=1 -- -operator-image "couchbase/couchbase-operator:${DOCKER_TAG}" -admission-image "couchbase/couchbase-operator-admission:${DOCKER_TAG}" --logging-image "couchbase/fluent-bit:${DOCKER_TAG}" "$@"
 popd
