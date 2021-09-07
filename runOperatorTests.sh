@@ -37,9 +37,8 @@ pushd "${OPERATOR_REPO_DIR}"
     rm -f couchbase-operator-certification*.bz2
     rm -f test/e2e/results*.xml
     # Run tests
-    if ! ./build/bin/cao certify --image "couchbase/couchbase-operator-certification:${DOCKER_TAG}" --clean --parallel=1 -- -operator-image "couchbase/couchbase-operator:${DOCKER_TAG}" -admission-image "couchbase/couchbase-operator-admission:${DOCKER_TAG}" --logging-image "couchbase/fluent-bit:${DOCKER_TAG}" "$@"; then
-        # Extract logs for failing
-        tar -xf couchbase-operator-certification*.bz2
-    fi
+    ./build/bin/cao certify --image "couchbase/couchbase-operator-certification:${DOCKER_TAG}" --clean --parallel=1 -- -operator-image "couchbase/couchbase-operator:${DOCKER_TAG}" -admission-image "couchbase/couchbase-operator-admission:${DOCKER_TAG}" --logging-image "couchbase/fluent-bit:${DOCKER_TAG}" "$@"
+    # Extract logs for failing
+    tar -xf couchbase-operator-certification*.bz2
 
 popd
