@@ -16,14 +16,19 @@ spec:
     metadata:
       labels:
         app: cbes
-        rollme: "3" # Always change this if the number of replicas changes then it will force a new roll out
+        # Make sure to always change this when replica count changes, unfortunately we cannot use a YAML
+        # anchor as replica takes an integer and we want a string here.
+        totalReplicas: "3"
     spec:
       containers:
       - name: cbes
         image: cbes-launcher:v1
         env:
+          # Set this from the label above to keep it consistent
           - name: TOTAL_REPLICAS
-            value: "3"
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.labels['totalReplicas']
           - name: LAUNCH_ME
             value: "/usr/local/bin/test.sh"
           - name: MY_POD_NAME
