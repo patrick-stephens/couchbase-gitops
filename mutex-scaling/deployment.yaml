@@ -6,9 +6,13 @@ metadata:
   labels:
     app: cbes
 spec:
+  # YOU MUST CHANGE THE LABEL BELOW AS WELL
   replicas: 3
+  # This is naughty but prevents voluntary eviction:
+  # maxUnavailable: 0
   strategy:
-    type: Recreate # Ensure all existing pods terminate before new ones start on a roll out
+    # Ensure all existing pods terminate before new ones start on a roll out
+    type: Recreate
   selector:
     matchLabels:
       app: cbes
