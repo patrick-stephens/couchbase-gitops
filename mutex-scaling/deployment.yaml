@@ -1,0 +1,36 @@
+# Just based on the official example: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cbes-deployment
+  labels:
+    app: cbes
+spec:
+  replicas: 3
+  strategy:
+    type: Recreate # Ensure all existing pods terminate before new ones start on a roll out
+  selector:
+    matchLabels:
+      app: cbes
+  template:
+    metadata:
+      labels:
+        app: cbes
+        rollme: "3" # Always change this if the number of replicas changes then it will force a new roll out
+    spec:
+      containers:
+      - name: cbes
+        image: cbes-launcher:v1
+        env:
+          - name: TOTAL_REPLICAS
+            value: "3"
+          - name: LAUNCH_ME
+            value: "/usr/local/bin/test.sh"
+          - name: MY_POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: MY_POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
