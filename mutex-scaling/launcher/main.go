@@ -9,9 +9,13 @@ import (
 	"strconv"
 	"time"
 
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/cache"
 )
 
 func getTotalReplicas() (int, error) {
@@ -53,12 +57,12 @@ func main() {
 	}
 	fmt.Println("Found replica count of:", totalReplicas)
 
-	CurrentPodName, err := getCurrentPodName()
+	currentPodName, err := getCurrentPodName()
 	if err != nil {
 		panic(err.Error())
 	}
 
-	ExeToLaunch, err := getExecutableToLaunch()
+	exeToLaunch, err := getExecutableToLaunch()
 	if err != nil {
 		panic(err.Error())
 	}
@@ -100,13 +104,39 @@ func main() {
 		panic(fmt.Errorf("exited loop incorrectly"))
 	}
 
-	fmt.Println("Looking for pod:", CurrentPodName)
+	// Watch the other pods for deletion and kill ourselves if so
+	options := func(options *metav1.ListOptions) {
+		options.LabelSelector = "app=cbes"
+	}
+	sharedOptions := []informers.SharedInformerOption{
+		informers.WithNamespace(getNamespace()),
+		informers.WithTweakListOptions(options),
+	}
+	informer := informers.NewSharedInformerFactoryWithOptions(clientset, time.Second, sharedOptions...)
+	podInformer := informer.Core().V1().Pods().Informer()
+	podInformer.AddEventHandler(&cache.ResourceEventHandlerFuncs{
+		DeleteFunc: func(obj interface{}) {
+			pod := obj.(*v1.Pod)
+			fmt.Println("Pod stopped", pod.Name, pod.Status.Reason)
+			fmt.Println("Suiciding to reset configuration")
+			os.Exit(0)
+		},
+	})
+
+	stopper := make(chan struct{})
+	defer close(stopper)
+	defer runtime.HandleCrash()
+	go informer.Start(stopper)
+
+	// TODO: watch for replica change events?
+
+	fmt.Println("Looking for pod:", currentPodName)
 
 	for index, value := range allPodNames {
-		if value == CurrentPodName {
+		if value == currentPodName {
 			fmt.Println("Found current pod", value, "at index", index)
 
-			cmd := exec.Command(ExeToLaunch)
+			cmd := exec.Command(exeToLaunch)
 			cmd.Env = append(os.Environ(), "CBES_ORDINAL="+strconv.Itoa(index))
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
