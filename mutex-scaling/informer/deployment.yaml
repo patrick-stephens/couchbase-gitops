@@ -1,0 +1,90 @@
+# Just based on the official example: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cbes-config
+data:
+  common.conf: |
+    any common stuff goes here
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cbes-deployment
+  labels:
+    app: cbes
+spec:
+  replicas: 3
+  strategy:
+    # Ensure all existing pods terminate before new ones start on a roll out
+    type: Recreate
+  selector:
+    matchLabels:
+      app: cbes
+  template:
+    metadata:
+      labels:
+        app: cbes
+    spec:
+      containers:
+      - name: cbes
+        image: cbes-tester:v1
+        env:
+          - name: CONFIG_DIR
+            value: /couchbase/conf
+          - name: MY_POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+        volumeMounts:
+          - name: config-volume
+            mountPath: /couchbase/conf
+      volumes:
+        - name: config-volume
+          configMap:
+            name: cbes-config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cbes-informer
+  labels:
+    app: cbes-informer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cbes-informer
+  template:
+    metadata:
+      labels:
+        app: cbes-informer
+    spec:
+      containers:
+      - name: cbes-informer
+        image: cbes-informer:v1
+        env:
+          - name: MY_POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: MY_POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: cbes-informer
+  labels:
+    app: cbes-informer
+spec:
+  selector:
+    app: cbes-informer
+  ports:
+  - name: http
+    protocol: TCP
+    port: 80
+    targetPort: 8080
