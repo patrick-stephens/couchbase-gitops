@@ -30,9 +30,14 @@ func getNamespace() string {
 
 var (
 	ordinalLock, deferredLock sync.RWMutex
-	podConfig                 map[string]int32
-	deferredPodConfig         []string
-	configDir                 = os.Getenv("CONFIG_DIR")
+	// this is a map of ordinals to pod names
+	podConfig         map[int]string
+	deferredPodConfig []string
+	configDir         = os.Getenv("CONFIG_DIR")
+)
+
+const (
+	invalidOrdinal = -1
 )
 
 func removeKey(podName string) {
@@ -40,8 +45,14 @@ func removeKey(podName string) {
 	defer ordinalLock.Unlock()
 	fmt.Println("Removing ordinal value for", podName)
 
-	delete(podConfig, podName)
+	for index, name := range podConfig {
+		if name == podName {
+			podConfig[index] = "" //mark as free
+			break
+		}
+	}
 
+	// Clean up stopped ones still awaiting to be added
 	deferredLock.Lock()
 	for index, val := range deferredPodConfig {
 		if val == podName {
@@ -55,50 +66,53 @@ func removeKey(podName string) {
 	defer deferredLock.Unlock()
 }
 
-func getOrdinal(podName string, max int32) int32 {
+func getOrdinal(podName string) int {
 	ordinalLock.Lock()
 	defer ordinalLock.Unlock()
 
 	fmt.Println("Attempting to get ordinal for", podName)
 
-	highestValue, exists := podConfig[podName]
-	if exists {
-		fmt.Println("Found existing ordinal value", highestValue, "for", podName)
-		return highestValue
-	}
-
-	for _, currentValue := range podConfig {
-		if currentValue > highestValue {
-			highestValue = currentValue
+	ordinalValue := invalidOrdinal
+	for index, value := range podConfig {
+		if value == podName {
+			fmt.Println("Found existing ordinal value", index, "for", podName)
+			return index
+		}
+		if value == "" {
+			fmt.Println("Adding ordinal value", index, "for", podName)
+			ordinalValue = index
+			podConfig[index] = podName
+			break
 		}
 	}
 
 	// increment to get next available
-	highestValue++
-	if highestValue > max {
-		fmt.Println("Currently unable to handle", podName, "as too many replicas", highestValue, ">", max)
-		deferredPodConfig = append(deferredPodConfig, podName)
-		return -1
+	if ordinalValue == invalidOrdinal {
+		fmt.Println("Currently unable to handle", podName, "as too many replicas running")
+		addDeferred(podName)
 	}
 
-	fmt.Println("Adding ordinal value", highestValue, "for", podName)
-	podConfig[podName] = highestValue
-	return highestValue
+	return ordinalValue
 }
 
-func checkForDeferred(max int32) {
+func addDeferred(podName string) {
 	deferredLock.Lock()
 	defer deferredLock.Unlock()
-	// check if we can add
+	deferredPodConfig = append(deferredPodConfig, podName)
+}
+
+func popDeferred() string {
+	deferredLock.Lock()
+	defer deferredLock.Unlock()
+
+	podName := ""
 	if len(deferredPodConfig) > 0 {
-		podName := deferredPodConfig[0]
+		podName = deferredPodConfig[0]
 		fmt.Println("Handling deferred pod start for", podName)
 
 		deferredPodConfig = deferredPodConfig[1:]
-		addConfig(podName, max) // will re-add if still too many
-	} else {
-		fmt.Println("No deferred config")
 	}
+	return podName
 }
 
 func main() {
@@ -113,6 +127,7 @@ func main() {
 		panic(err)
 	}
 
+	initialise(clientset)
 	//TODO: leader election here requires RBAC sorting on K8S side really
 	serveConfig(clientset)
 }
@@ -158,7 +173,7 @@ func leaderElectionAndServe(clientset *kubernetes.Clientset) {
 	})
 }
 
-func serveConfig(clientset *kubernetes.Clientset) {
+func initialise(clientset *kubernetes.Clientset) {
 	// figure out how "big" we should be
 	deploymentSpec, err := clientset.AppsV1().Deployments(getNamespace()).GetScale(context.TODO(), "cbes-deployment", metav1.GetOptions{})
 	if err != nil {
@@ -169,8 +184,13 @@ func serveConfig(clientset *kubernetes.Clientset) {
 	totalReplicas := deploymentSpec.Spec.Replicas
 	fmt.Println("Detected", totalReplicas, "replicas")
 
-	podConfig = make(map[string]int32, totalReplicas)
+	podConfig = make(map[int]string, totalReplicas)
+	for i := 0; i < int(totalReplicas); i++ {
+		podConfig[i] = ""
+	}
+}
 
+func serveConfig(clientset *kubernetes.Clientset) {
 	// now watch apps we are monitoring
 	options := func(options *metav1.ListOptions) {
 		options.LabelSelector = "app=cbes"
@@ -190,12 +210,12 @@ func serveConfig(clientset *kubernetes.Clientset) {
 		AddFunc: func(obj interface{}) {
 			pod := obj.(*v1.Pod)
 			fmt.Println("Pod started", pod.Name, pod.Status.Reason)
-			addConfig(pod.Name, totalReplicas)
+			addConfig(pod.Name)
 		},
 		DeleteFunc: func(obj interface{}) {
 			pod := obj.(*v1.Pod)
 			fmt.Println("Pod stopped", pod.Name, pod.Status.Reason)
-			removeConfig(pod.Name, totalReplicas)
+			removeConfig(pod.Name)
 		},
 	})
 
@@ -206,43 +226,50 @@ func serveConfig(clientset *kubernetes.Clientset) {
 	http.Handle("/", fileserver)
 
 	fmt.Println("Starting file server")
-	err = http.ListenAndServe(":8080", nil)
+	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println("Exiting")
 }
 
-func addConfig(podName string, totalReplicas int32) {
-	ordinalForPod := getOrdinal(podName, totalReplicas)
-	if ordinalForPod > 0 {
-		fmt.Println("Ordinal", ordinalForPod, "for pod", podName)
-
-		configFileName := fmt.Sprintf("%s/%s.conf", configDir, podName)
-		configFile, err := os.Create(configFileName)
-		if err != nil {
-			panic(err)
-		}
-		defer configFile.Close()
-		fileContents := fmt.Sprintf("CBES_ORDINAL=%d\n", ordinalForPod)
-		_, err = configFile.WriteString(fileContents)
-		if err != nil {
-			panic(err)
-		}
-		fmt.Println("Wrote", fileContents, "to file", configFile.Name())
-	} else {
-		fmt.Println("Deferred config for", podName)
+func addConfig(podName string) {
+	if podName == "" {
+		return
 	}
+
+	ordinalForPod := getOrdinal(podName)
+	if ordinalForPod == invalidOrdinal {
+		fmt.Println("Deferred config for", podName)
+		return
+	}
+	fmt.Println("Ordinal", ordinalForPod, "for pod", podName)
+
+	configFileName := fmt.Sprintf("%s/%s.conf", configDir, podName)
+	configFile, err := os.Create(configFileName)
+	if err != nil {
+		panic(err)
+	}
+	defer configFile.Close()
+	fileContents := fmt.Sprintf("CBES_ORDINAL=%d\n", ordinalForPod)
+	_, err = configFile.WriteString(fileContents)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Wrote", fileContents, "to file", configFile.Name())
 }
 
-func removeConfig(podName string, totalReplicas int32) {
+func removeConfig(podName string) {
 	removeKey(podName)
 	configFileName := fmt.Sprintf("%s/%s.conf", configDir, podName)
 	err := os.Remove(configFileName)
 	if err != nil {
+		// May not exist if deferred
 		fmt.Println("Unable to remove config", configFileName, err.Error())
 	} else {
 		fmt.Println("Removed file", configFileName)
 	}
-	checkForDeferred(totalReplicas)
+
+	// Attempt to add anything that is deferred
+	addConfig(popDeferred())
 }
