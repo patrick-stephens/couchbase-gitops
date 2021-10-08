@@ -8,6 +8,11 @@ data:
   common.conf: |
     any common stuff goes here
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cbes-config-dynamic
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -33,6 +38,8 @@ spec:
         env:
           - name: CONFIG_DIR
             value: /couchbase/conf
+          - name: DYNAMIC_CONFIG_DIR
+            value: /couchbase/dynamic
           - name: MY_POD_NAME
             valueFrom:
               fieldRef:
@@ -40,10 +47,15 @@ spec:
         volumeMounts:
           - name: config-volume
             mountPath: /couchbase/conf
+          - name: dynamic-config-volume
+            mountPath: /couchbase/dynamic
       volumes:
         - name: config-volume
           configMap:
             name: cbes-config
+        - name: dynamic-config-volume
+          configMap:
+            name: cbes-config-dynamic
 ---
 apiVersion: apps/v1
 kind: Deployment

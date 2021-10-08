@@ -15,6 +15,6 @@ kind load docker-image cbes-tester:v1
 # Delete anything already there
 kubectl delete -f "${SCRIPT_DIR}/deployment.yaml" || true
 # We need RBAC privileges to access the API - this should be done separately really (or in the YAML)
-kubectl create clusterrolebinding default-view --clusterrole=view --serviceaccount=default:default || true
+kubectl create clusterrolebinding cluster-admin-informer --clusterrole=cluster-admin --serviceaccount=default:default || true
 # Now deploy what we have
 kubectl apply -f "${SCRIPT_DIR}/deployment.yaml"

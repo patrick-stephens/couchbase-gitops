@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"os"
 	"sync"
 	"time"
@@ -29,11 +28,10 @@ func getNamespace() string {
 }
 
 var (
-	ordinalLock, deferredLock sync.RWMutex
+	threadLock sync.RWMutex
 	// this is a map of ordinals to pod names
 	podConfig         map[int]string
 	deferredPodConfig []string
-	configDir         = os.Getenv("CONFIG_DIR")
 )
 
 const (
@@ -41,8 +39,6 @@ const (
 )
 
 func removeKey(podName string) {
-	ordinalLock.Lock()
-	defer ordinalLock.Unlock()
 	fmt.Println("Removing ordinal value for", podName)
 
 	for index, name := range podConfig {
@@ -53,7 +49,6 @@ func removeKey(podName string) {
 	}
 
 	// Clean up stopped ones still awaiting to be added
-	deferredLock.Lock()
 	for index, val := range deferredPodConfig {
 		if val == podName {
 			fmt.Println("Removing deferred start for", podName)
@@ -63,13 +58,9 @@ func removeKey(podName string) {
 			break
 		}
 	}
-	defer deferredLock.Unlock()
 }
 
 func getOrdinal(podName string) int {
-	ordinalLock.Lock()
-	defer ordinalLock.Unlock()
-
 	fmt.Println("Attempting to get ordinal for", podName)
 
 	ordinalValue := invalidOrdinal
@@ -96,15 +87,10 @@ func getOrdinal(podName string) int {
 }
 
 func addDeferred(podName string) {
-	deferredLock.Lock()
-	defer deferredLock.Unlock()
 	deferredPodConfig = append(deferredPodConfig, podName)
 }
 
 func popDeferred() string {
-	deferredLock.Lock()
-	defer deferredLock.Unlock()
-
 	podName := ""
 	if len(deferredPodConfig) > 0 {
 		podName = deferredPodConfig[0]
@@ -119,15 +105,15 @@ func main() {
 	// creates the in-cluster config
 	config, err := rest.InClusterConfig()
 	if err != nil {
-		panic(err)
+		panic(err.Error())
 	}
 	// creates the clientset
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		panic(err)
+		panic(err.Error())
 	}
 
-	initialise(clientset)
+	initialiseOrdinalMap(clientset)
 	//TODO: leader election here requires RBAC sorting on K8S side really
 	serveConfig(clientset)
 }
@@ -173,20 +159,31 @@ func leaderElectionAndServe(clientset *kubernetes.Clientset) {
 	})
 }
 
-func initialise(clientset *kubernetes.Clientset) {
-	// figure out how "big" we should be
+func getReplicaCount(clientset *kubernetes.Clientset) int {
 	deploymentSpec, err := clientset.AppsV1().Deployments(getNamespace()).GetScale(context.TODO(), "cbes-deployment", metav1.GetOptions{})
 	if err != nil {
-		panic(err)
+		panic(err.Error())
 	}
 
-	// TODO: Want to be notified on this changing as well - use an informer that watches for the scaling event on the deployment
-	totalReplicas := deploymentSpec.Spec.Replicas
-	fmt.Println("Detected", totalReplicas, "replicas")
+	return int(deploymentSpec.Spec.Replicas)
+}
 
-	podConfig = make(map[int]string, totalReplicas)
-	for i := 0; i < int(totalReplicas); i++ {
-		podConfig[i] = ""
+func initialiseOrdinalMap(clientset *kubernetes.Clientset) {
+	// TODO: Want to be notified on this changing as well - use an informer that watches for the scaling event on the deployment
+	totalReplicas := getReplicaCount(clientset)
+
+	// TODO: on scaling changes we want to recalculate and provide ordinals - this might be better via a push notification over RPC then
+	originalLength := len(podConfig)
+	if originalLength != totalReplicas {
+		fmt.Println("Detected", totalReplicas, "replicas, currently set to", originalLength)
+
+		// If we have pod C allocated as ordinal 1 then we scale from 3 pods to 2, K8S may kill pod C even though it is ordinal 1
+		// This means every time there is a scaling change we need to just wipe it all and start again.
+		podConfig = make(map[int]string, totalReplicas)
+		for i := 0; i < int(totalReplicas); i++ {
+			podConfig[i] = ""
+		}
+		// When scaling in either direction, the ordinals for existing pods do not change however their total range does.
 	}
 }
 
@@ -210,27 +207,47 @@ func serveConfig(clientset *kubernetes.Clientset) {
 		AddFunc: func(obj interface{}) {
 			pod := obj.(*v1.Pod)
 			fmt.Println("Pod started", pod.Name, pod.Status.Reason)
+			threadLock.Lock()
+			defer threadLock.Unlock()
 			addConfig(pod.Name)
+			updateConfigMap(clientset)
 		},
 		DeleteFunc: func(obj interface{}) {
 			pod := obj.(*v1.Pod)
 			fmt.Println("Pod stopped", pod.Name, pod.Status.Reason)
+			threadLock.Lock()
+			defer threadLock.Unlock()
 			removeConfig(pod.Name)
+			updateConfigMap(clientset)
 		},
 	})
 
-	go podInformer.Run(stopper)
+	podInformer.Run(stopper)
+}
 
-	// TODO: replace with gRPC or similar comms
-	fileserver := http.FileServer(http.Dir(configDir))
-	http.Handle("/", fileserver)
+// TODO: thread protection - might just be better to guard the two event methods
 
-	fmt.Println("Starting file server")
-	err := http.ListenAndServe(":8080", nil)
+func updateConfigMap(clientset *kubernetes.Clientset) {
+	// load current
+	configMap, err := clientset.CoreV1().ConfigMaps(getNamespace()).Get(context.TODO(), "cbes-config-dynamic", metav1.GetOptions{})
 	if err != nil {
-		panic(err)
+		panic(err.Error)
 	}
-	fmt.Println("Exiting")
+
+	// overwrite with our data - TODO: leader election probably needs to merge this
+	configMapData["overall.conf"] = fmt.Sprintf("TOTAL_REPLICAS=%d\n", getReplicaCount(clientset))
+	configMap.Data = configMapData
+
+	_, err = clientset.CoreV1().ConfigMaps(getNamespace()).Update(context.Background(), configMap, metav1.UpdateOptions{})
+	if err != nil {
+		panic(err.Error())
+	}
+}
+
+var configMapData map[string]string = make(map[string]string)
+
+func getConfigFileName(podName string) string {
+	return fmt.Sprintf("%s.conf", podName)
 }
 
 func addConfig(podName string) {
@@ -245,31 +262,12 @@ func addConfig(podName string) {
 	}
 	fmt.Println("Ordinal", ordinalForPod, "for pod", podName)
 
-	configFileName := fmt.Sprintf("%s/%s.conf", configDir, podName)
-	configFile, err := os.Create(configFileName)
-	if err != nil {
-		panic(err)
-	}
-	defer configFile.Close()
-	fileContents := fmt.Sprintf("CBES_ORDINAL=%d\n", ordinalForPod)
-	_, err = configFile.WriteString(fileContents)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println("Wrote", fileContents, "to file", configFile.Name())
+	configMapData[getConfigFileName(podName)] = fmt.Sprintf("CBES_ORDINAL=%d\n", ordinalForPod)
 }
 
 func removeConfig(podName string) {
 	removeKey(podName)
-	configFileName := fmt.Sprintf("%s/%s.conf", configDir, podName)
-	err := os.Remove(configFileName)
-	if err != nil {
-		// May not exist if deferred
-		fmt.Println("Unable to remove config", configFileName, err.Error())
-	} else {
-		fmt.Println("Removed file", configFileName)
-	}
-
+	delete(configMapData, getConfigFileName(podName))
 	// Attempt to add anything that is deferred
 	addConfig(popDeferred())
 }
