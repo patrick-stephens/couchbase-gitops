@@ -21,7 +21,7 @@ set -eu
 # In case you want a different name
 CLUSTER_NAME=${CLUSTER_NAME:-xdcr-test}
 # The server container image to use
-SERVER_IMAGE=${SERVER_IMAGE:-couchbase/server:7.0.0}
+SERVER_IMAGE=${SERVER_IMAGE:-couchbase/server:7.0.1}
 
 # Delete the old cluster
 kind delete cluster --name="${CLUSTER_NAME}"
@@ -61,6 +61,8 @@ buckets:
     kind: CouchbaseBucket
 
 cluster:
+  security:
+    password: password
   image: ${SERVER_IMAGE}
   xdcr:
     managed: true
@@ -99,5 +101,33 @@ spec:
   bucket: default
   remoteBucket: target
 EOF
+
+# Now add a remote cluster
+CLUSTER2_NAMESPACE=${CLUSTER2_NAMESPACE:-test-remote}
+
+helm upgrade --install "${CLUSTER2_NAMESPACE}" couchbase/couchbase-operator \
+    --set cluster.image="${SERVER_IMAGE}",cluster.servers.default.size="1",install.admissionController=false,cluster.security.password="password",buckets.target.kind="CouchbaseBucket" \
+    --namespace "${CLUSTER2_NAMESPACE}" --create-namespace --wait  --values "${HELM_CONFIG}"
+
+# Wait for deployment to complete, a call to --wait may work with helm but it can be flakey
+echo "Waiting for Couchbase to start up..."
+# The operator uses readiness gates to hold the containers until the cluster is actually ready to be used
+until [[ $(kubectl get pods --namespace "${CLUSTER2_NAMESPACE}" --field-selector=status.phase=Running --selector='app=couchbase' --no-headers 2>/dev/null |wc -l) -eq 1 ]]; do
+    echo -n '.'
+    sleep 2
+done
+echo "Completed Couchbase deployment 2 into: $CLUSTER2_NAMESPACE"
+
+CLUSTER_ID=$(kubectl get cbc --namespace "${CLUSTER2_NAMESPACE}" test-remote-couchbase-cluster -o template --template='{{.status.clusterId}}')
+cat << EOF >> "${HELM_CONFIG}"
+    remoteClusters:
+    - authenticationSecret: auth-couchbase-couchbase-cluster
+      hostname: couchbase://${CLUSTER2_NAMESPACE}-couchbase-cluster-srv.${CLUSTER2_NAMESPACE}?network=default
+      name: ${CLUSTER2_NAMESPACE}-couchbase-cluster
+      uuid: ${CLUSTER_ID}
+EOF
+
+# Update the original
+helm upgrade --install couchbase couchbase/couchbase-operator --values "${HELM_CONFIG}"
 
 rm -f "${HELM_CONFIG}"

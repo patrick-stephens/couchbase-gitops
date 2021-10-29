@@ -58,10 +58,10 @@ metadata:
   labels:
     istio-injection: enabled
 ---
-apiVersion: "security.istio.io/v1beta1"
-kind: "PeerAuthentication"
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
 metadata:
-  name: "peer-authentication-cluster"
+  name: peer-authentication-cluster
   namespace: istio-system
 spec:
   mtls:
@@ -71,11 +71,11 @@ apiVersion: security.istio.io/v1beta1
 kind: PeerAuthentication
 metadata:
   name: peer-authentication-dac
-  namespace: remote
+  namespace: default
 spec:
   selector:
     matchLabels:
-      app: couchbase-operator-admission
+      app.kubernetes.io/name=couchbase-admission-controller
   mtls:
     mode: PERMISSIVE
 ---
@@ -115,8 +115,17 @@ rm -rf "$TEMPDIR"
 helm repo add couchbase https://couchbase-partners.github.io/helm-charts/ || helm repo add couchbase https://couchbase-partners.github.io/helm-charts
 helm repo update
 
+helm upgrade --install daconly couchbase/couchbase-operator --set install.admissionController=true,install.couchbaseOperator=false,install.couchbaseCluster=false
+until [[ $(kubectl get pods --field-selector=status.phase=Running --selector='app.kubernetes.io/name=couchbase-admission-controller' --no-headers 2>/dev/null |wc -l) -eq $SERVER_COUNT ]]; do
+    echo -n '.'
+    sleep 2
+done
+
 HELM_CONFIG=$(mktemp)
+echo "Using Helm config file: $HELM_CONFIG"
 cat << EOF > "${HELM_CONFIG}"
+install:
+    admissionController: false
 cluster:
     image: ${SERVER_IMAGE}
     networking:
@@ -130,7 +139,7 @@ EOF
 
 helm upgrade --install remote couchbase/couchbase-operator --values="${HELM_CONFIG}" --namespace remote
 
-until [[ $(kubectl -ns remote get pods --field-selector=status.phase=Running --selector='app=couchbase' --no-headers 2>/dev/null |wc -l) -eq $SERVER_COUNT ]]; do
+until [[ $(kubectl --namespace remote get pods --field-selector=status.phase=Running --selector='app=couchbase' --no-headers 2>/dev/null |wc -l) -eq $SERVER_COUNT ]]; do
     echo -n '.'
     sleep 2
 done
@@ -146,12 +155,12 @@ cat << EOF >> "${HELM_CONFIG}"
               uuid: ${CLUSTER_ID}
 EOF
 
-helm upgrade --install local couchbase/couchbase-operator --set install.admissionController=false --values="${HELM_CONFIG}" --namespace local
+helm upgrade --install local couchbase/couchbase-operator --values="${HELM_CONFIG}" --namespace local
 
 # Wait for deployment to complete, the --wait flag does not work for this.
 echo "Waiting for CB to start up..."
 # The operator uses readiness gates to hold the containers until the cluster is actually ready to be used
-until [[ $(kubectl -ns local get pods --field-selector=status.phase=Running --selector='app=couchbase' --no-headers 2>/dev/null |wc -l) -eq $SERVER_COUNT ]]; do
+until [[ $(kubectl --namespace local get pods --field-selector=status.phase=Running --selector='app=couchbase' --no-headers 2>/dev/null |wc -l) -eq $SERVER_COUNT ]]; do
     echo -n '.'
     sleep 2
 done
@@ -163,9 +172,12 @@ apiVersion: couchbase.com/v2
 kind: CouchbaseReplication
 metadata:
   name: replicate-default-buckets
+  namespace: local
 spec:
   bucket: default
   remoteBucket: default
 EOF
 
 echo "Added bucket replication"
+
+kubectl port-forward -n local svc/local-couchbase-cluster-ui 8091:8091

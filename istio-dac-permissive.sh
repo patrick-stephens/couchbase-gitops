@@ -28,9 +28,9 @@ kind create cluster --name="${CLUSTER_NAME}" --config="${CLUSTER_CONFIG}" --imag
 
 # We load the images here to make sure we do not hit rate limits when run in a loop for CI
 declare -a IMAGES_REQUIRED=("docker.io/istio/proxyv2:1.10.1"
-"couchbase/server:6.6.2"
-"couchbase/operator:2.2.0"
-"couchbase/admission-controller:2.2.0"
+"couchbase/server:7.0.2"
+"couchbase/operator:2.2.1"
+"couchbase/admission-controller:2.2.1"
 "couchbase/couchbase-operator:v1"
 )
 for i in "${IMAGES_REQUIRED[@]}"
