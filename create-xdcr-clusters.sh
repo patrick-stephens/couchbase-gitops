@@ -19,7 +19,7 @@
 set -eu
 
 CLUSTER_NAME=${CLUSTER_NAME:-kind}
-SERVER_IMAGE=${SERVER_IMAGE:-couchbase/server:7.0.2}
+SERVER_IMAGE=${SERVER_IMAGE:-couchbase/server:6.6.3}
 SERVER_COUNT=${SERVER_COUNT:-1}
 
 kind delete cluster --name="${CLUSTER_NAME}"
@@ -71,7 +71,7 @@ apiVersion: security.istio.io/v1beta1
 kind: PeerAuthentication
 metadata:
   name: peer-authentication-dac
-  namespace: default
+  namespace: remote
 spec:
   selector:
     matchLabels:
