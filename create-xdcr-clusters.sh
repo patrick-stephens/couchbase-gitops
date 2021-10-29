@@ -116,7 +116,7 @@ helm repo add couchbase https://couchbase-partners.github.io/helm-charts/ || hel
 helm repo update
 
 helm upgrade --install daconly couchbase/couchbase-operator --set install.admissionController=true,install.couchbaseOperator=false,install.couchbaseCluster=false
-until [[ $(kubectl get pods --field-selector=status.phase=Running --selector='app.kubernetes.io/name=couchbase-admission-controller' --no-headers 2>/dev/null |wc -l) -eq $SERVER_COUNT ]]; do
+until [[ $(kubectl get pods --field-selector=status.phase=Running --selector='app.kubernetes.io/name=couchbase-admission-controller' --no-headers 2>/dev/null |wc -l) -eq 1 ]]; do
     echo -n '.'
     sleep 2
 done
