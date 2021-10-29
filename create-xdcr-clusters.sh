@@ -20,7 +20,7 @@ set -eu
 
 CLUSTER_NAME=${CLUSTER_NAME:-kind}
 SERVER_IMAGE=${SERVER_IMAGE:-couchbase/server:6.6.3}
-SERVER_COUNT=${SERVER_COUNT:-1}
+SERVER_COUNT=${SERVER_COUNT:-3}
 
 kind delete cluster --name="${CLUSTER_NAME}"
 kind create cluster --name="${CLUSTER_NAME}" --config - <<EOF
@@ -75,7 +75,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/name=couchbase-admission-controller
+      app.kubernetes.io/name: couchbase-admission-controller
   mtls:
     mode: PERMISSIVE
 ---
@@ -144,12 +144,14 @@ until [[ $(kubectl --namespace remote get pods --field-selector=status.phase=Run
     sleep 2
 done
 
+# Sleep for at least 1 reconcile loop to allow for cluster ID update
+sleep 20
 CLUSTER_ID=$(kubectl get cbc --namespace remote remote-couchbase-cluster -o template --template='{{.status.clusterId}}')
 cat << EOF >> "${HELM_CONFIG}"
     xdcr:
         managed: true
         remoteClusters:
-            - authenticationSecret: auth-couchbase-couchbase-cluster
+            - authenticationSecret: auth-local-couchbase-cluster
               hostname: couchbase://remote-couchbase-cluster-srv.remote?network=default
               name: remote-couchbase-cluster
               uuid: ${CLUSTER_ID}
