@@ -19,7 +19,7 @@
 set -eu
 
 CLUSTER_NAME=${CLUSTER_NAME:-kind}
-SERVER_IMAGE=${SERVER_IMAGE:-couchbase/server:6.6.3}
+SERVER_IMAGE=${SERVER_IMAGE:-couchbase/server:7.0.2}
 SERVER_COUNT=${SERVER_COUNT:-3}
 
 kind delete cluster --name="${CLUSTER_NAME}"
@@ -34,13 +34,24 @@ EOF
 docker pull "${SERVER_IMAGE}"
 kind load docker-image "${SERVER_IMAGE}" --name="${CLUSTER_NAME}"
 
-# Add Istio for local and remote namespaces in STRICT mode with injection enabled
-TEMPDIR=$(mktemp -d)
-pushd "$TEMPDIR"
-curl -L https://istio.io/downloadIstio | sh -
-pushd istio-*/bin
+if [[ ${USE_ISTIO:-yes} == "yes" ]]; then
+  # Add Istio for local and remote namespaces in STRICT mode with injection enabled
+  TEMPDIR=$(mktemp -d)
+  pushd "$TEMPDIR"
+    curl -L https://istio.io/downloadIstio | sh -
+    pushd istio-*/bin
+      ./istioctl install --set profile=default --skip-confirmation \
+        --set values.global.istiod.enableAnalysis=true \
+        --set meshConfig.accessLogFile=/dev/stdout \
+        --set values.global.proxy.privileged=true
+    popd
+  popd
+  rm -rf "$TEMPDIR"
+fi
 
-./istioctl install --set profile=default --skip-confirmation --set values.global.istiod.enableAnalysis=true --set meshConfig.accessLogFile=/dev/stdout --set values.global.proxy.privileged=true
+LOCAL_NAMESPACE_INJECTION=${LOCAL_NAMESPACE_INJECTION:-enabled}
+REMOTE_NAMESPACE_INJECTION=${REMOTE_NAMESPACE_INJECTION:-enabled}
+
 # https://istio.io/latest/docs/tasks/security/authentication/authn-policy/#globally-enabling-istio-mutual-tls-in-strict-mode
 kubectl apply -f - <<EOF
 ---
@@ -49,14 +60,19 @@ kind: Namespace
 metadata:
   name: local
   labels:
-    istio-injection: enabled
+    istio-injection: $LOCAL_NAMESPACE_INJECTION
 ---
 apiVersion: v1
 kind: Namespace
 metadata:
   name: remote
   labels:
-    istio-injection: enabled
+    istio-injection: $REMOTE_NAMESPACE_INJECTION
+---
+EOF
+
+if [[ ${USE_STRICT_MODE:-yes} == "yes" ]]; then
+  kubectl apply -f - <<EOF
 ---
 apiVersion: security.istio.io/v1beta1
 kind: PeerAuthentication
@@ -105,12 +121,7 @@ spec:
     mode: STRICT
 ---
 EOF
-
-popd
-popd
-rm -rf "$TEMPDIR"
-
-# TODO: test with LoadBalancer
+fi
 
 helm repo add couchbase https://couchbase-partners.github.io/helm-charts/ || helm repo add couchbase https://couchbase-partners.github.io/helm-charts
 helm repo update
@@ -147,12 +158,24 @@ done
 # Sleep for at least 1 reconcile loop to allow for cluster ID update
 sleep 20
 CLUSTER_ID=$(kubectl get cbc --namespace remote remote-couchbase-cluster -o template --template='{{.status.clusterId}}')
+# IP based addressing fails, service based addressing does
+# Get a node IP (worker) and node port for the remote cluster
+REMOTE_NODE_PORT=$(kubectl --namespace remote get svc remote-couchbase-cluster-ui -o json | jq '.spec.ports[0].nodePort')
+REMOTE_NODE_IP=$(kubectl get nodes -o json| jq -c '.items[1].status.addresses[0].address'|tr -d '"')
+REMOTE_CLUSTER_HOSTNAME="couchbase://$REMOTE_NODE_IP:$REMOTE_NODE_PORT?network=external"
+
+if [[ ${USE_DNS:-no} == "yes" ]]; then
+  REMOTE_CLUSTER_HOSTNAME="couchbase://remote-couchbase-cluster-srv.remote?network=external" # Works
+fi
+
+echo "Using: $REMOTE_CLUSTER_HOSTNAME"
+
 cat << EOF >> "${HELM_CONFIG}"
     xdcr:
         managed: true
         remoteClusters:
             - authenticationSecret: auth-local-couchbase-cluster
-              hostname: couchbase://remote-couchbase-cluster-srv.remote?network=default
+              hostname: $REMOTE_CLUSTER_HOSTNAME
               name: remote-couchbase-cluster
               uuid: ${CLUSTER_ID}
 EOF
@@ -182,4 +205,23 @@ EOF
 
 echo "Added bucket replication"
 
-kubectl port-forward -n local svc/local-couchbase-cluster-ui 8091:8091
+kubectl logs -f deployment/local-couchbase-operator  --namespace local
+
+# kubectl port-forward -n local svc/local-couchbase-cluster-ui 8091:8091
+
+# cat << EOF | kubectl apply -f -
+# ---
+# apiVersion: batch/v1
+# kind: Job
+# metadata:
+#   name: cb-workload-gen
+#   namespace: local
+# spec:
+#   template:
+#     spec:
+#       containers:
+#       - name: doc-loader
+#         image: couchbase/server:7.0.2
+#         command: ["/opt/couchbase/bin/cbworkloadgen", "-n","local-couchbase-cluster-0000.local-couchbase-cluster.local.svc:8091", "-u", "Administrator", "-p", "Password", "-t", "4", "-r", ".7", "-j", "-s", "1024","--prefix=wrote-a","-i", "100", "-b", "default"]
+#       restartPolicy: Never
+# EOF
