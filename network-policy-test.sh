@@ -82,7 +82,7 @@ metadata:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: default-deny-all
+  name: default-deny-all-except-dns
   namespace: $NAMESPACE
 spec:
   podSelector: {}
@@ -100,7 +100,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-egress-to-apiserver-and-dac
+  name: couchbase-operator-policy
   namespace: $NAMESPACE
 spec:
   podSelector:
