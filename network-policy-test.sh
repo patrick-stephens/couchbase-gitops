@@ -53,6 +53,9 @@ EOF
       sleep 2
   done
   echo "Calico pods ready to go"
+
+  # Use a cluster DAC in a non-protected namespace to simplify webhook usage and we need the DAC service IP/port
+  helm upgrade --install couchbase-dac couchbase/couchbase-operator --set cluster.image="$SERVER_IMAGE",install.couchbaseCluster=false,install.couchbaseOperator=false --namespace default --wait
 else
   kubectl delete namespace test
 fi
@@ -62,6 +65,11 @@ API_SERVER_IP=$(kubectl get endpoints --namespace default kubernetes --output=js
 API_SERVER_PORT=$(kubectl get endpoints --namespace default kubernetes --output=json|jq '.subsets[0].ports[0].port' -r)
 echo "K8S API server endpoint is $API_SERVER_IP:$API_SERVER_PORT"
 
+# We need the DAC endpoints for the operator to talk to
+DAC_SERVER_IP=$(kubectl get service --namespace default couchbase-dac-couchbase-admission-controller --output=json|jq -r -c '.spec.clusterIP')
+echo "DAC endpoint is $DAC_SERVER_IP:443"
+
+# We have an issue with blocking comms to the DAC prior to running Helm so do afterwards
 # Add network policy
 # Default deny-all: https://raw.githubusercontent.com/kubernetes/website/main/content/en/examples/service/networking/network-policy-default-deny-all.yaml
 kubectl apply -f - <<EOF
@@ -87,64 +95,7 @@ spec:
     to:
     - ipBlock:
         cidr: $API_SERVER_IP/32
-EOF
-
-# Use a cluster DAC in a non-protected namespace
-helm upgrade --install couchbase-dac couchbase/couchbase-operator --set cluster.image="$SERVER_IMAGE",install.couchbaseCluster=false,install.couchbaseOperator=false --namespace default --wait
-
-# We need the DAC endpoints for the operator to talk to
-DAC_SERVER_IP=$(kubectl get service --namespace default couchbase-dac-couchbase-admission-controller --output=json|jq -r -c '.spec.clusterIP')
-echo "DAC endpoint is $DAC_SERVER_IP:443"
-
-# We have an issue with blocking comms to the DAC prior to running Helm so do afterwards
-
-# Add Couchbase via helm chart but without the DAC
-helm repo add couchbase https://couchbase-partners.github.io/helm-charts/ || helm repo add couchbase https://couchbase-partners.github.io/helm-charts
-helm repo update
-helm upgrade --install couchbase couchbase/couchbase-operator --set cluster.image="$SERVER_IMAGE",install.admissionController=false --namespace "$NAMESPACE"
-
-# Add network policy
-# Default deny-all: https://raw.githubusercontent.com/kubernetes/website/main/content/en/examples/service/networking/network-policy-default-deny-all.yaml
-kubectl apply -f - <<EOF
 ---
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: $NAMESPACE
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: test-policy
-  namespace: $NAMESPACE
-spec:
-  podSelector: {}
-  policyTypes:
-    - Ingress
-    - Egress
-  ingress:
-    - from:
-        - podSelector: {}
-    - from:
-        - ipBlock:
-            cidr: 0.0.0.0/0
-  egress:
-    - to:
-        - podSelector: {}
-    - to:
-      - namespaceSelector:
-          matchLabels:
-            name: kube-system
-      ports:
-        - port: 53
-          protocol: UDP
-    - to:
-        - ipBlock:
-            cidr: $DAC_SERVER_IP/32
-      # ports:
-      #   - port: 443
-      #     protocol: TCP
-# ---
 # apiVersion: networking.k8s.io/v1
 # kind: NetworkPolicy
 # metadata:
@@ -155,98 +106,40 @@ spec:
 #   policyTypes:
 #   - Ingress
 #   - Egress
-# ---
-# apiVersion: networking.k8s.io/v1
-# kind: NetworkPolicy
-# metadata:
-#   name: allow-dns-access
-#   namespace: $NAMESPACE
-# spec:
-#   podSelector:
-#     matchLabels: {}
-#   policyTypes:
-#   - Egress
-#   egress:
-#   - to:
-#     - namespaceSelector:
-#         matchLabels:
-#           name: kube-system
-#     ports:
-#     - protocol: UDP
-#       port: 53
 ---
-# kind: NetworkPolicy
-# apiVersion: networking.k8s.io/v1
-# metadata:
-#   name: dac-network-policy
-#   namespace: $NAMESPACE
-# spec:
-#   podSelector:
-#     matchLabels:
-#       app.kubernetes.io/name: couchbase-admission-controller
-#   policyTypes:
-#   - Ingress
-#   - Egress
-#   ingress:
-#   - from:
-#     - ipBlock:
-#       cidr: 0.0.0.0/0
-#   - from:
-#     - podSelector:
-#         matchLabels:
-#           app.kubernetes.io/name: couchbase-operator
-#   - from:
-#     - ipBlock:
-#         cidr: $API_SERVER_IP/32
-# ---
-# apiVersion: networking.k8s.io/v1
-# kind: NetworkPolicy
-# metadata:
-#   name: operator-network-policy
-#   namespace: $NAMESPACE
-# spec:
-#   podSelector:
-#     matchLabels:
-#       app.kubernetes.io/name: couchbase-operator
-#   policyTypes:
-#   - Egress
-#   egress:
-#   - to:
-#     - podSelector:
-#         matchLabels:
-#           app.kubernetes.io/name: couchbase-admission-controller
-#   - to:
-#     - podSelector:
-#         matchLabels:
-#           app: couchbase
-# ---
-# apiVersion: networking.k8s.io/v1
-# kind: NetworkPolicy
-# metadata:
-#   name: server-network-policy
-#   namespace: $NAMESPACE
-# spec:
-#   podSelector:
-#     matchLabels:
-#       app: couchbase
-#   policyTypes:
-#   - Ingress
-#   - Egress
-#   egress:
-#   - to:
-#     - podSelector:
-#         matchLabels:
-#           app: couchbase
-#   ingress:
-#   - from:
-#     - podSelector:
-#         matchLabels:
-#           app.kubernetes.io/name: couchbase-operator
-#   - from:
-#     - podSelector:
-#         matchLabels:
-#           app: couchbase
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: couchbase-namespace-policy
+  namespace: $NAMESPACE
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow traffic to/from the entire namespace
+    - {}
+  egress:
+    - {}
+    # DNS
+    - to:
+      - namespaceSelector:
+          matchLabels:
+            name: kube-system
+      ports:
+        - port: 53
+          protocol: UDP
+    # DAC
+    - to:
+        - ipBlock:
+            cidr: $DAC_SERVER_IP/32
 EOF
+
+# Add Couchbase via helm chart but without the DAC
+helm repo add couchbase https://couchbase-partners.github.io/helm-charts/ || helm repo add couchbase https://couchbase-partners.github.io/helm-charts
+helm repo update
+helm upgrade --install couchbase couchbase/couchbase-operator --set cluster.image="$SERVER_IMAGE",install.admissionController=false --namespace "$NAMESPACE"
 
 # Wait for deployment to complete, potentially a call to --wait may work with helm but it can be flakey
 echo "Waiting for CB to start up..."
