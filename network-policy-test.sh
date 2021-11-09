@@ -57,7 +57,7 @@ EOF
   # Use a cluster DAC in a non-protected namespace to simplify webhook usage and we need the DAC service IP/port
   helm upgrade --install couchbase-dac couchbase/couchbase-operator --set cluster.image="$SERVER_IMAGE",install.couchbaseCluster=false,install.couchbaseOperator=false --namespace default --wait
 else
-  kubectl delete namespace test
+  kubectl delete namespace test || true
 fi
 
 # We need the K8S server API endpoints so we can monitor and update
@@ -82,30 +82,44 @@ metadata:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-egress-to-apiserver
+  name: default-deny-all
+  namespace: $NAMESPACE
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-egress-to-apiserver-and-dac
   namespace: $NAMESPACE
 spec:
   podSelector:
     matchLabels:
       app.kubernetes.io/name: couchbase-operator
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - {}
   egress:
-  - ports:
-    - port: $API_SERVER_PORT
-      protocol: TCP
-    to:
-    - ipBlock:
-        cidr: $API_SERVER_IP/32
----
-# apiVersion: networking.k8s.io/v1
-# kind: NetworkPolicy
-# metadata:
-#   name: default-deny-all
-#   namespace: $NAMESPACE
-# spec:
-#   podSelector: {}
-#   policyTypes:
-#   - Ingress
-#   - Egress
+    - {}
+  # egress:
+  # - to:
+  #   - podSelector:
+  #       matchLabels:
+  #         app: couchbase
+  # - ports:
+  #   - port: $API_SERVER_PORT
+  #     protocol: TCP
+  #   to:
+  #   - ipBlock:
+  #       cidr: $API_SERVER_IP/32
+  # - to:
+  #   - ipBlock:
+  #       cidr: $DAC_SERVER_IP/32
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -113,27 +127,17 @@ metadata:
   name: couchbase-namespace-policy
   namespace: $NAMESPACE
 spec:
-  podSelector: {}
+  podSelector:
+    matchLabels:
+      app: couchbase
   policyTypes:
     - Ingress
     - Egress
+  # Allow traffic to/from the entire namespace
   ingress:
-    # Allow traffic to/from the entire namespace
     - {}
   egress:
     - {}
-    # DNS
-    - to:
-      - namespaceSelector:
-          matchLabels:
-            name: kube-system
-      ports:
-        - port: 53
-          protocol: UDP
-    # DAC
-    - to:
-        - ipBlock:
-            cidr: $DAC_SERVER_IP/32
 EOF
 
 # Add Couchbase via helm chart but without the DAC
