@@ -109,21 +109,19 @@ spec:
   policyTypes:
     - Egress
   egress:
-    - {}
-  # egress:
-  # - to:
-  #   - podSelector:
-  #       matchLabels:
-  #         app: couchbase
-  # - ports:
-  #   - port: $API_SERVER_PORT
-  #     protocol: TCP
-  #   to:
-  #   - ipBlock:
-  #       cidr: $API_SERVER_IP/32
-  # - to:
-  #   - ipBlock:
-  #       cidr: $DAC_SERVER_IP/32
+  - to:
+    - podSelector:
+        matchLabels:
+          app: couchbase
+  - ports:
+    - port: $API_SERVER_PORT
+      protocol: TCP
+    to:
+    - ipBlock:
+        cidr: $API_SERVER_IP/32
+  - to:
+    - ipBlock:
+        cidr: $DAC_SERVER_IP/32
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -140,10 +138,18 @@ spec:
   # Allow traffic to/from the pods in the namespace
   ingress:
     - from:
-      - podSelector: {}
+      - podSelector:
+          matchLabels:
+            app: couchbase
+    - from:
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/name: couchbase-operator
   egress:
     - to:
-      - podSelector: {}
+      - podSelector:
+          matchLabels:
+            app: couchbase
 EOF
 
 # Add Couchbase via helm chart but without the DAC
