@@ -100,12 +100,17 @@ spec:
     matchLabels:
       app.kubernetes.io/name: couchbase-operator
   policyTypes:
-    - Ingress
+    # - Ingress
     - Egress
-  ingress:
-    - {}
+  # ingress:
+  #   - {}
   egress:
     - {}
+  # ingress:
+  # - from:
+  #   - podSelector:
+  #       matchLabels:
+  #         app: couchbase
   # egress:
   # - to:
   #   - podSelector:
