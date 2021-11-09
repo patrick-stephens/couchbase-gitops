@@ -89,6 +89,13 @@ spec:
   policyTypes:
   - Ingress
   - Egress
+  egress:
+  # allow DNS resolution
+  - ports:
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -100,17 +107,9 @@ spec:
     matchLabels:
       app.kubernetes.io/name: couchbase-operator
   policyTypes:
-    # - Ingress
     - Egress
-  # ingress:
-  #   - {}
   egress:
     - {}
-  # ingress:
-  # - from:
-  #   - podSelector:
-  #       matchLabels:
-  #         app: couchbase
   # egress:
   # - to:
   #   - podSelector:
@@ -138,11 +137,13 @@ spec:
   policyTypes:
     - Ingress
     - Egress
-  # Allow traffic to/from the entire namespace
+  # Allow traffic to/from the pods in the namespace
   ingress:
-    - {}
+    - from:
+      - podSelector: {}
   egress:
-    - {}
+    - to:
+      - podSelector: {}
 EOF
 
 # Add Couchbase via helm chart but without the DAC
