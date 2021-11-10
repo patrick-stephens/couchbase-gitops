@@ -119,9 +119,6 @@ spec:
     to:
     - ipBlock:
         cidr: $API_SERVER_IP/32
-  - to:
-    - ipBlock:
-        cidr: $DAC_SERVER_IP/32
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
